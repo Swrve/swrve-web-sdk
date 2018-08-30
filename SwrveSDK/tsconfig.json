@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "lib": [
+      "dom",
+      "es5",
+      "es6",
+      "es2016.array.include",
+      "es2015.promise"
+    ],
+    "outDir": "dist/lib",
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "sourceMap": true,
+  },
+  "include": [
+    "./src"
+  ]
+}

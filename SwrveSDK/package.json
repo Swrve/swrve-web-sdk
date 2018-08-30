@@ -1,0 +1,45 @@
+{
+  "name": "@swrve/web-sdk",
+  "version": "1.0.1",
+  "author": "Swrve Inc.",
+  "license": "Apache-2.0",
+  "main": "dist/SwrveSDK.js",
+  "types": "dist/types/index.d.ts",
+  "readme": "../README.md",
+  "keywords": [
+    "swrve",
+    "sdk",
+    "web",
+    "browser",
+    "js",
+    "chrome",
+    "firefox",
+    "safari",
+    "engagement",
+    "marketing",
+    "platform"
+  ],
+  "scripts": {
+    "bundle": "yarn run bundle:prod",
+    "bundle:dev": "webpack --config webpack.config.js --progress --profile --color --watch",
+    "bundle:prod": "NODE_ENV=production webpack --config webpack.config.js --progress --color",
+    "bundle:release": "yarn run bundle:prod && yarn run types",
+    "clean": "yarn cache clean && rm -rf ./dist",
+    "prepublish": "yarn bundle:release",
+    "types": "tsc --declaration --declarationDir dist/types"
+  },
+  "devDependencies": {
+    "clean-webpack-plugin": "0.1.18",
+    "ts-loader": "3.5.0",
+    "ts-md5": "1.2.4",
+    "tslint": "^5.10.0",
+    "tslint-config-airbnb": "^5.9.2",
+    "tslint-loader": "3.5.3",
+    "typedoc": "0.5.0",
+    "typedoc-webpack-plugin": "1.1.4",
+    "typescript": "^2.8.3",
+    "uglifyjs-webpack-plugin": "1.1.8",
+    "webpack": "^3.11.0",
+    "webpack-dev-server": "2.11.1"
+  }
+}
