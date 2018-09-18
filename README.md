@@ -1,6 +1,6 @@
 What is Swrve
 -------------
-Swrve is a single integrated platform delivering everything you need to drive device engagement and create valuable consumer relationships on their internet enabled devices.  
+Swrve is a multi-channel customer engagement platform that provides hyper-targeting and hyper-personalization in real-time to automate relevant moments of interaction that acquire, retain and monetize customers.
 This Web-based SDK will enable your app to use all of these features.
 
 Getting started
