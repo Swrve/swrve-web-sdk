@@ -1,6 +1,6 @@
 abstract class DateHelper {
   public static dateToSwrveISOString(date: Date): string {
-    return date.toISOString().split('.')[0] + 'Z';
+    return `${date.toISOString().split('.')[0]}Z`;
   }
 
   public static dateToSwrveYYYYMMDDFormat(date: Date): string {

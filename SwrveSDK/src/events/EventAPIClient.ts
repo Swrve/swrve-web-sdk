@@ -4,7 +4,7 @@ import RESTClient from '../networking/RESTClient';
 
 class EventAPIClient {
   public readonly apiVersion: number = 1;
-  public readonly eventBatchUriPath: string = `/batch`;
+  public readonly eventBatchUriPath: string = '/batch';
 
   private baseUrl: string;
   private userId: string;

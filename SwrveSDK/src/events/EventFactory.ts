@@ -1,5 +1,14 @@
 import DateHelper from '../helpers/DateHelper';
-import { EventType, eventTypes, IEventDBData, IPurchaseEventDBData } from '../interfaces/IEvents';
+import {
+  ActionType,
+  CampaignType,
+  EventType,
+  eventTypes,
+  ICurrencyGivenDBData,
+  IEventDBData,
+  IGenericCampaignEventDBData,
+  IPurchaseEventDBData,
+} from '../interfaces/IEvents';
 
 class EventFactory {
   public constructEvent(seqnum: number, isQA: boolean, time: number, type: string, name?: string, payload?: object): IEventDBData {
@@ -27,7 +36,22 @@ class EventFactory {
       attributes,
       seqnum,
       time,
-      type: eventTypes.userUpdateEvent as EventType,
+      type: eventTypes.userUpdateEvent,
+    };
+
+    return requestBody;
+  }
+
+  /** Generic Campaign Event */
+  public constructGenericCampaignEvent(seqnum: number, isQA: boolean, time: number, campaignType: CampaignType, campaignId: number, id: number, actionType: ActionType): IGenericCampaignEventDBData {
+    const requestBody: IGenericCampaignEventDBData = {
+      actionType,
+      campaignId,
+      campaignType,
+      id,
+      seqnum,
+      time,
+      type: eventTypes.genericCampaignEvent,
     };
 
     return requestBody;
@@ -54,7 +78,6 @@ class EventFactory {
 
     /** Purchase Event */
   public constructPurchaseEvent(seqnum: number, isQA: boolean, time: number, item: string, currency: string, cost: number, quantity: number): IPurchaseEventDBData {
-
     const requestBody: IPurchaseEventDBData = {
       cost,
       currency,
@@ -63,6 +86,19 @@ class EventFactory {
       seqnum,
       time,
       type: eventTypes.purchaseEvent as EventType,
+    };
+
+    return requestBody;
+  }
+
+  /** Currency Given */
+  public constructCurrencyGiven(seqnum: number, isQA: boolean, time: number, currency: string, amount: number): ICurrencyGivenDBData {
+    const requestBody: ICurrencyGivenDBData = {
+      given_amount: amount,
+      given_currency: currency,
+      seqnum,
+      time,
+      type: eventTypes.currencyGiven as EventType,
     };
 
     return requestBody;

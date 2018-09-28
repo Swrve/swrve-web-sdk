@@ -3,8 +3,8 @@ import EventAPIClient from '../events/EventAPIClient';
 import { IBackgroundProcessor } from '../interfaces/IBackgroundProcessor';
 import { IFlushConfig } from '../interfaces/ISwrveConfig';
 import LocalStorageClient from '../storage/LocalStorageClient';
-
 import Swrve from '../Swrve';
+import SwrveLogger from '../util/SwrveLogger';
 
 class EventQueueManager implements IBackgroundProcessor {
 
@@ -46,8 +46,8 @@ class EventQueueManager implements IBackgroundProcessor {
     try {
       this.sendEvents();
     } catch (err) {
-      // tslint:disable-next-line:no-console
-      console.error('SwrveSDK - could not clear events before shutdown', err);
+      SwrveLogger.errorMsg('SwrveSDK - could not clear events before shutdown');
+      SwrveLogger.errorMsg(err);
     }
     this.timeoutProcess = undefined;
   }
@@ -65,7 +65,7 @@ class EventQueueManager implements IBackgroundProcessor {
     if (events.length > 0) {
       this.eventAPIClient.sendEventBatch(eventParams, events);
     }
-    
+
     this.localStorageClient.fetchEventKeys(this.userID).forEach((key) => {
       this.localStorageClient.deleteEventOnQueue(key);
     });
@@ -80,8 +80,8 @@ class EventQueueManager implements IBackgroundProcessor {
     try {
       this.sendEvents();
     } catch (err) {
-      // tslint:disable-next-line:no-console
-      console.error('SwrveSDK - An error has occured processing events', err);
+      SwrveLogger.errorMsg('SwrveSDK - An error has occured processing events');
+      SwrveLogger.errorMsg(err);
     }
     this.setAsStopped();
 

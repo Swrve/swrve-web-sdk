@@ -10,6 +10,7 @@ import { IRESTResponse } from './interfaces/IRESTClient';
 import RESTClient from './networking/RESTClient';
 import LocalStorageClient from './storage/LocalStorageClient';
 import Swrve from './Swrve';
+import { isNil } from './util/Nil';
 import SwrveLogger from './util/SwrveLogger';
 
 class ResourceCampaignsManager implements IBackgroundProcessor {
@@ -28,6 +29,17 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
   public async getInfoForSession(): Promise<IInfoForSession | void> {
     const session: Swrve = Swrve.getCurrentInstance();
     const localStorageClient = new LocalStorageClient();
+
+    if (session.Profile.Etag) {
+      /**
+       * Due the volatility of browser storage,
+       * we need to ensure that if there is an Etag in memory
+       * that we definitely have items stored to match it. if not purge Etag
+       */
+      if (isNil(localStorageClient.fetchLastFlushRefreshDelay(session.Profile.UserId))) {
+        Swrve.getCurrentInstance().Profile.setEtag(null);
+      }
+    }
 
     try {
       const response: IRESTResponse = await this.getResourcesAndCampaigns();
@@ -51,7 +63,7 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
       return {
         flushFrequency: localStorageClient.fetchLastFlushFrequency(session.Profile.UserId) || defaultFlushFrequency,
         flushRefreshDelay: localStorageClient.fetchLastFlushRefreshDelay(session.Profile.UserId) || defaultFlushRefreshDelay,
-        qa: localStorageClient.fetchQAStatus(session.Profile.UserId) || session.Profile.IsQA,
+        qa: localStorageClient.fetchQAStatus(session.Profile.UserId) || false,
         webPushPublicKey: localStorageClient.fetchLastWebPushPublicKey(session.Profile.UserId) || null,
       };
 
@@ -76,8 +88,8 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
     try {
       this.getResourcesAndCampaigns();
     } catch (err) {
-      // tslint:disable-next-line:no-console
-      console.error('SwrveSDK - An error has occured processing events', err);
+      SwrveLogger.errorMsg('SwrveSDK - An error has occured processing events');
+      SwrveLogger.errorMsg(err);
     }
     this.setAsStopped();
 
@@ -112,7 +124,7 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
       language: ClientInfoHelper.getBrowserLanguage(),
       orientation: resourcesCampaignSpecialParams.orientation,
       os: ClientInfoHelper.getOS().name,
-      os_version:ClientInfoHelper.getOS().version,
+      os_version: ClientInfoHelper.getOS().version,
       user: session.Profile.UserId,
       version: resourcesCampaignSpecialParams.version,
     };

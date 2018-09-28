@@ -8,6 +8,8 @@ import {
   EventType,
   eventTypes,
   firstSessionEventName,
+  ICurrencyParams,
+  IGenericCampaignEventParams,
   INamedEventParams,
   IPurchaseParams,
   IUserUpdateWithDateParams,
@@ -23,6 +25,7 @@ import EventQueueManager from './events/EventQueueManager';
 
 import ClientInfoHelper from './helpers/ClientInfoHelper';
 import SwrveProfile from './profile/SwrveProfile';
+import SwrvePushManager from './push/SwrvePushManager';
 
 import LocalStorageClient from './storage/LocalStorageClient';
 import { OnSwrveLoadedCallback } from './SwrveSDK';
@@ -44,6 +47,7 @@ class Swrve {
 
   private eventQueueManager: EventQueueManager;
   private campaignManager: ResourceCampaignsManager;
+  private swrvePushManager: SwrvePushManager;
   private webPushAPIKey: string;
 
   private constructor(config: ISwrveConfig) {
@@ -58,12 +62,17 @@ class Swrve {
     return this.config;
   }
 
+  public get SwrvePushManager(): SwrvePushManager {
+    return this.swrvePushManager;
+  }
+
   public get DeviceId(): string {
     return this.getPersistentDeviceId();
   }
 
   public get getUserID(): string {
-    SwrveLogger.infoMsg('UserID Returned: ' + this.profile.UserId);
+    SwrveLogger.infoMsg('UserID Returned:');
+    SwrveLogger.infoMsg(this.profile.UserId);
     return this.profile.UserId as string;
   }
 
@@ -121,18 +130,19 @@ class Swrve {
 
     /** Start up the profile */
     try {
+      SwrveLogger.infoMsg('Setting up profile');
       this.profile = new SwrveProfile(this.config.ExternalUserId);
 
       if (!this.profile.IsIdentityResolved) {
         await this.profile.callIdentifyOnExternalUserId(this.config.ExternalUserId, this);
 
         if (this.profile.IsIdentityResolved) {
-          SwrveLogger.infoMsg('Identify Resolved: ' + this.profile.UserId + ' for extUserId: ' + this.profile.ExternalUserId);
+          SwrveLogger.infoMsg(`Identify Resolved: ${this.profile.UserId} for extUserId: ${this.profile.ExternalUserId}`);
         }
       }
 
       if (this.profile.IsIdentityResolved) {
-        SwrveLogger.infoMsg('Profile Resolved: ' + this.profile.UserId + ' for extUserId: ' + this.profile.ExternalUserId);
+        SwrveLogger.infoMsg(`Profile Resolved: ${this.profile.UserId} for extUserId: ${this.profile.ExternalUserId}`);
 
         /** check if we need to start a new session or restore an old one */
         if (!this.hasSessionRestored()) {
@@ -141,12 +151,15 @@ class Swrve {
           this.sessionStart();
         }
 
+        SwrveLogger.infoMsg('Generating Session Token');
         this.sessionToken = this.generateSessionToken();
 
         /** call the getCampaignsAndResources request to get flush_frequency */
+        SwrveLogger.infoMsg('Fetching synchronous campaigns and resources');
         await this.initCampaignsAndResources();
 
         /** start an async function to flush events */
+        SwrveLogger.infoMsg('Initializing event Manager');
         this.eventQueueManager = new EventQueueManager(this.config, this.flushConfig, this.getUserID, this.sessionToken);
         this.eventQueueManager.init();
 
@@ -156,7 +169,18 @@ class Swrve {
         }
 
         /** Send User Properties */
+        SwrveLogger.infoMsg('Sending Client Info');
         this.sendClientInfo();
+
+        /** Setup push configuration */
+        if (this.config.AutoPushSubscribe === false) {
+          SwrveLogger.infoMsg('SwrvePushManager Will not initialize. Auto subscribe is disabled');
+        } else {
+          SwrveLogger.infoMsg('Initializing PushManager');
+          this.swrvePushManager = new SwrvePushManager(this.config, this.WebPushAPIKey);
+          this.swrvePushManager.init();
+        }
+
         window.onbeforeunload = (): void => { Swrve.pageCloseHandler(); };
         if (this.config.AutoPushSubscribe) {
           SwrveLogger.infoMsg('autoPushSubscribe: ON');
@@ -166,6 +190,7 @@ class Swrve {
         if (this.onSwrveLoadedCallback != null) {
           this.onSwrveLoadedCallback(null);
         }
+
       } else {
         Swrve.shutdown();
         throw new Error('User Profile could not be resolved');
@@ -206,13 +231,21 @@ class Swrve {
       /**  Check if the instance is a qa user */
       this.profile.setQAFlag(infoFromResourcesCampaigns.qa);
 
-      /** Check if we need to retrieve Web Push Keys */
-      if (this.config.AutoPushSubscribe) {
+      /** Check if there is a web push key to be used */
+      if (infoFromResourcesCampaigns.webPushPublicKey) {
         this.webPushAPIKey = infoFromResourcesCampaigns.webPushPublicKey;
       }
 
       this.campaignManager.init(this.flushConfig);
     }
+  }
+
+  public registerPush(onSuccess: () => void, onFailure: (error: Error) => void): void {
+    this.swrvePushManager.registerPush(onSuccess, onFailure);
+  }
+
+  public unregisterPush(onSuccess: () => void, onFailure: (err: Error) => void): void {
+    this.swrvePushManager.unregisterPush(onSuccess, onFailure);
   }
 
   /** Called from SwrveSDK */
@@ -261,6 +294,27 @@ class Swrve {
     }
   }
 
+  public genericCampaignEvent(params: IGenericCampaignEventParams): void {
+    if (params.actionType && params.campaignType && params.campaignId && params.id) {
+      this.genericCampaignEventInternal({
+        actionType: params.actionType,
+        campaignId: params.campaignId,
+        campaignType: params.campaignType,
+        id: params.id,
+      });
+    }
+  }
+
+  public pushNotificationEngagedEvent(id: number): void {
+    this.eventInternal('event', { name:`Swrve.Messages.Push-${id}.engaged` });
+  }
+
+  public currencyGiven (params: ICurrencyParams): void {
+    if (params.currency && params.amount) {
+      this.currencyGivenInternal({ currency: params.currency, amount: params.amount });
+    }
+  }
+
   /** Callback Methods */
 
   public set onSwrveLoaded(callback: OnSwrveLoadedCallback) {
@@ -279,7 +333,7 @@ class Swrve {
     /** Event used internally */
     const queueEntry = this.eventFactory.constructEvent(this.profile.updateSeqnum(),
                                                         this.profile.IsQA,
-                                                        new Date().getTime(),
+                                                        this.nowInUtcTime(),
                                                         eventType,
                                                         params.name,
                                                         params.payload);
@@ -287,10 +341,35 @@ class Swrve {
     this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
   }
 
+  private genericCampaignEventInternal(params: IGenericCampaignEventParams) {
+    const queueEntry = this.eventFactory.constructGenericCampaignEvent(
+      this.profile.updateSeqnum(),
+      this.profile.IsQA,
+      new Date().getTime(),
+      params.campaignType,
+      params.campaignId,
+      params.id,
+      params.actionType,
+    );
+
+    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+  }
+
+  private currencyGivenInternal(params: ICurrencyParams) {
+    const queueEntry = this.eventFactory.constructCurrencyGiven(this.profile.updateSeqnum(),
+                                                                this.profile.IsQA,
+                                                                this.nowInUtcTime(),
+                                                                params.currency,
+                                                                params.amount,
+    );
+
+    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+  }
+
   private sessionStartInternal() {
     const queueEntry = this.eventFactory.constructEvent(this.profile.updateSeqnum(),
                                                         this.profile.IsQA,
-                                                        new Date().getTime(),
+                                                        this.nowInUtcTime(),
                                                         eventTypes.sessionStartEvent,
     );
 
@@ -301,20 +380,20 @@ class Swrve {
     /** UserUpdate used internally */
     const queueEntry = this.eventFactory.constructUserUpdate(this.profile.updateSeqnum(),
                                                              this.profile.IsQA,
-                                                             new Date().getTime(),
+                                                             this.nowInUtcTime(),
                                                              attributes);
     this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
   }
 
   private userUpdateWithDateInternal (type: string, attributes: IUserUpdateWithDateParams): void {
     const seqnum = this.profile.updateSeqnum();
-    const queueEntry = this.eventFactory.constructUserUpdateWithDate(seqnum, this.profile.IsQA, new Date().getTime(), attributes.name, attributes.date);
+    const queueEntry = this.eventFactory.constructUserUpdateWithDate(seqnum, this.profile.IsQA, this.nowInUtcTime(), attributes.name, attributes.date);
     this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
   }
 
   private purchaseInternal (item: string, currency: string, cost: number, quantity: number): void {
     const seqnum = this.profile.updateSeqnum();
-    const queueEntry = this.eventFactory.constructPurchaseEvent(seqnum, this.profile.IsQA, new Date().getTime(), item, currency, cost, quantity);
+    const queueEntry = this.eventFactory.constructPurchaseEvent(seqnum, this.profile.IsQA, this.nowInUtcTime(), item, currency, cost, quantity);
     /** we include true here (oddly) to force the queue to flush */
     this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
   }
@@ -322,7 +401,7 @@ class Swrve {
   private sendClientInfo(): void {
     const seqnum = this.profile.updateSeqnum();
     const properties = ClientInfoHelper.getClientInfo();
-    const queueEntry = this.eventFactory.constructDeviceUpdate(seqnum, this.profile.IsQA, new Date().getTime(), properties);
+    const queueEntry = this.eventFactory.constructDeviceUpdate(seqnum, this.profile.IsQA, this.nowInUtcTime(), properties);
 
     this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
   }
@@ -340,9 +419,10 @@ class Swrve {
 
   private hasSessionRestored(): boolean {
     if (this.profile.LastSession != null) {
-      SwrveLogger.infoMsg('LastSession: ' + this.profile.LastSession);
+      SwrveLogger.infoMsg('LastSession');
+      SwrveLogger.infoMsg(this.profile.LastSession);
       const lastSession: number = this.profile.LastSession;
-      const now: number = new Date().getTime();
+      const now: number = this.nowInUtcTime();
       const expirationTimeout: number = this.config.NewSessionInterval * 1000; /** convert to ms */
       if (!lastSession || now - lastSession > expirationTimeout) {
         return false;
@@ -366,8 +446,9 @@ class Swrve {
   }
 
   private setPersistentInstallDate(): void {
-    const persistentDate = new Date(Date.now());
-    SwrveLogger.infoMsg('Setting Install Date:' + persistentDate);
+    const persistentDate = DateHelper.dateToUTCDate(new Date(Date.now()));
+    SwrveLogger.infoMsg('Setting Install Date:');
+    SwrveLogger.infoMsg(persistentDate);
     this.localStorageClient.storeInstallDate(DateHelper.dateToSwrveYYYYMMDDFormat(persistentDate));
   }
 
@@ -385,6 +466,10 @@ class Swrve {
     const uniqueDeviceId = generateUuid();
     SwrveLogger.infoMsg(`Setting device id: ${uniqueDeviceId}`);
     this.localStorageClient.storeDeviceID(uniqueDeviceId.toString());
+  }
+
+  private nowInUtcTime() {
+    return DateHelper.dateToUTCDate(new Date()).getTime();
   }
 
   // Browser/DOM Lifecycle

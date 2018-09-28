@@ -1,6 +1,6 @@
 {
   "name": "@swrve/web-sdk",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "Swrve Inc.",
   "license": "Apache-2.0",
   "main": "dist/SwrveSDK.js",
@@ -21,25 +21,24 @@
   ],
   "scripts": {
     "bundle": "yarn run bundle:prod",
-    "bundle:dev": "webpack --config webpack.config.js --progress --profile --color --watch",
-    "bundle:prod": "NODE_ENV=production webpack --config webpack.config.js --progress --color",
+    "bundle:dev": "webpack --config webpack.config.js --progress --profile --color --watch --mode=production",
+    "bundle:prod": "NODE_ENV=production webpack --config webpack.config.js --progress --color --mode=development",
     "bundle:release": "yarn run bundle:prod && yarn run types",
     "clean": "yarn cache clean && rm -rf ./dist",
     "prepublish": "yarn bundle:release",
     "types": "tsc --declaration --declarationDir dist/types"
   },
   "devDependencies": {
-    "clean-webpack-plugin": "0.1.18",
-    "ts-loader": "3.5.0",
-    "ts-md5": "1.2.4",
-    "tslint": "^5.10.0",
-    "tslint-config-airbnb": "^5.9.2",
-    "tslint-loader": "3.5.3",
-    "typedoc": "0.5.0",
-    "typedoc-webpack-plugin": "1.1.4",
-    "typescript": "^2.8.3",
-    "uglifyjs-webpack-plugin": "1.1.8",
-    "webpack": "^3.11.0",
-    "webpack-dev-server": "2.11.1"
+    "clean-webpack-plugin": "^0.1.19",
+    "ts-loader": "^4.5.0",
+    "ts-md5": "^1.2.4",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.10.0",
+    "tslint-loader": "^3.6.0",
+    "typedoc": "^0.12.0",
+    "typedoc-webpack-plugin": "^1.1.4",
+    "typescript": "^3.0.3",
+    "webpack": "^4.19.1",
+    "webpack-cli": "^3.1.0"
   }
 }

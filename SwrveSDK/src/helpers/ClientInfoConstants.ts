@@ -1,6 +1,6 @@
 import { IBrowsersRegex } from '../interfaces/IClientInfo';
 
-export const sdkVersion = 'Web 1.0.0';
+export const sdkVersion = 'Web 1.1.0';
 export const appStore   = 'web';
 
 /** Common Swrve Device Update Properties */

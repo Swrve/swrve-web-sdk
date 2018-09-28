@@ -39,7 +39,7 @@ abstract class SwrveValidator {
 
     const type: string = 'string';
     if (apiKey && typeof apiKey !== type) { errors.push(`apiKey should be a ${type}`); }
-    if (apiKey && typeof apiKey === type && !apiKey.startsWith(websdkKeyPrefix)) { errors.push(`apiKey should be a valid web_sdk api key`); }
+    if (apiKey && typeof apiKey === type && !apiKey.startsWith(websdkKeyPrefix)) { errors.push('apiKey should be a valid web_sdk api key'); }
 
     return errors;
   }

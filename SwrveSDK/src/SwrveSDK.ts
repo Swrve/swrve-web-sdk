@@ -1,12 +1,14 @@
 import SwrveConfig from './config/SwrveConfig';
 import SwrveValidator from './helpers/SwrveValidator';
 import {
+  ICurrencyParams,
   INamedEventParams,
   IPurchaseParams,
   IUserUpdateWithDateParams,
 } from './interfaces/IEvents';
 import { ISwrveConfig } from './interfaces/ISwrveConfig';
 import { IValidateError } from './interfaces/ISwrveValidator';
+import SwrvePushManager from './push/SwrvePushManager';
 import Swrve from './Swrve';
 import SwrveEnvironment from './util/SwrveEnvironment';
 
@@ -68,12 +70,28 @@ class SwrveSDK {
     SwrveSDK.checkInstance().purchaseEvent(params);
   }
 
+  public static currencyGiven (params: ICurrencyParams): void {
+    SwrveSDK.checkInstance().currencyGiven(params);
+  }
+
   public static getQueuedEvents(): any {
     return SwrveSDK.checkInstance().getQueuedEvents();
   }
 
   public static getConfig(): SwrveConfig {
     return SwrveSDK.checkInstance().Config;
+  }
+
+  public static getPushManager(): SwrvePushManager {
+    return SwrveSDK.checkInstance().SwrvePushManager;
+  }
+
+  public static registerPush(onSuccess?: () => void, onFailure?: (err?: Error) => Error): void {
+    return SwrveSDK.checkInstance().registerPush(onSuccess, onFailure);
+  }
+
+  public static unregisterPush(onSuccess?: () => void, onFailure?: (err?: Error) => void): void {
+    return SwrveSDK.checkInstance().unregisterPush(onSuccess, onFailure);
   }
 
   public static shutdown(): void {

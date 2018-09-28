@@ -17,8 +17,10 @@ export interface ISwrveConfig {
   language?: string;
   newSessionInterval?: number;
   /** Push Parameters */
+  pushEnabled?: boolean; // To request push permissions and subscriptions.
   serviceWorker?: string;
   autoPushSubscribe?: boolean;
+  userVisibleOnly?: boolean; // Part of PushManager.subscribe's options.
 }
 
 export interface IFlushConfig {

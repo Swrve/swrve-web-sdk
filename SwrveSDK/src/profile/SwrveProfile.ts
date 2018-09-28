@@ -115,7 +115,8 @@ class SwrveProfile {
         this.saveSwrveProfileToStorage(newProfile);
 
       } else {
-        SwrveLogger.errorMsg('Identify failed: ' + response.statusCode + (response.jsonBody) ? ' message: ' + response.jsonBody : 'with no message.');
+        const suffixMessage = isNil(response.jsonBody) ? 'with no message.' : ` message: ${response.jsonBody}`;
+        SwrveLogger.errorMsg(`Identify failed: ${response.statusCode} :: ${suffixMessage}`);
       }
     } catch (error) { SwrveLogger.errorMsg(error); }
   }
@@ -133,7 +134,7 @@ class SwrveProfile {
     try {
       const data: ISwrveProfile = SwrveProfile.getSwrveProfileFromStorage(externalUserId as string);
       if (!isNil(data) && this.isValidResultProfile(data)) {
-        SwrveLogger.infoMsg('Received from Storage: ' + data.userId + ' | ' + data.extUserId + ' | ' + data.seqnum + ' | ' + data.firstSession + ' | ' + data.lastSession + ' | ' + data.etag);
+        SwrveLogger.infoMsg(`Received from Storage: ${data.userId} | ${data.extUserId} | ${data.seqnum} | ${data.firstSession} | ${data.lastSession} | ${data.etag}`);
         return data;
       }
       return null;

@@ -6,8 +6,7 @@ abstract class EventValidator {
 
     for (const restricted of restrictedNamesStartWith) {
       if (eventName == null || eventName.startsWith(restricted)) {
-        SwrveLogger.errorMsg('Event names cannot begin with: ' + restricted +
-                              'This event will not be sent. Eventname:' + eventName);
+        SwrveLogger.errorMsg(`Event names cannot begin with: ${restricted} :: This event will not be sent. Eventname: ${eventName}`);
         return false;
       }
     }

@@ -1,5 +1,5 @@
+/* tslint:disable:no-console */
 import { messageConfig } from '../config/AppConfigParams';
-import { ISwrveConfig, ModeType } from '../interfaces/ISwrveConfig';
 import SwrveEnvironment from './SwrveEnvironment';
 
 abstract class SwrveLogger {
@@ -22,25 +22,25 @@ abstract class SwrveLogger {
 
     switch (type) {
       case messageConfig.types.info:
+        // tslint:disable-next-line:no-console
         return !SwrveEnvironment.ProdMode && this.outputMsg(console.info, mainMessage, additionalMsg) || true;
       case messageConfig.types.warn:
+        // tslint:disable-next-line:no-console
         return !SwrveEnvironment.ProdMode && this.outputMsg(console.warn, mainMessage, additionalMsg) || true;
       case messageConfig.types.error:
+        // tslint:disable-next-line:no-console
         return this.outputMsg(console.error, mainMessage, additionalMsg) || true;
     }
   }
 
-  /** Console tsLint rule ignored here since this is the only place it should happen */
   private static outputMsg(outputMethod: any, mainMsg: string, additionalMsg: any): void {
     if (additionalMsg) {
-      // tslint:disable-next-line:no-console
       console.group(mainMsg);
       if (Array.isArray(additionalMsg)) {
         additionalMsg.map((msg: any): void => { outputMethod(msg); });
       } else {
         outputMethod(additionalMsg);
       }
-      // tslint:disable-next-line:no-console
       console.groupEnd();
     } else {
       outputMethod(mainMsg);

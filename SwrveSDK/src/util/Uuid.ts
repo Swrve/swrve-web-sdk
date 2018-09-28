@@ -41,7 +41,7 @@ export class Uuid {
 
   public toString(): string {
     return this.bytes.map((b: number) => b.toString(16))
-            .map((s: string) => ('0' + s).substr(-2))
+            .map((s: string) => (`0${s}`).substr(-2))
             .join('')
             .replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
   }

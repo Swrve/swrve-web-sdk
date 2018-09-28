@@ -13,8 +13,11 @@ class SwrveConfig {
   private newSessionInterval: number | null = null;
   private httpTimeoutSeconds: number | null = null;
   private serviceWorker: string | null = null;
-  private autoPushSubscribe: boolean | null = false;
   private stack: Stack;
+  // Push properties
+  private pushEnabled: boolean | null = false; // To request push permissions and subscriptions.
+  private autoPushSubscribe: boolean | null = false;
+  private userVisibleOnly?: boolean | null = true;
 
   public constructor(config: ISwrveConfig) {
     this.externalUserId = config.externalUserId;
@@ -78,6 +81,10 @@ class SwrveConfig {
 
   public get NewSessionInterval(): number {
     return this.newSessionInterval;
+  }
+
+  public get UserVisibleOnly(): boolean {
+    return this.userVisibleOnly;
   }
 
   private resolveApiUrl(config: ISwrveConfig): void {

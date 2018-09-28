@@ -1,15 +1,21 @@
 /** Internal Event */
 export declare type EventType = 'session_start' | 'generic_campaign_event' | 'event' | 'user' | 'purchase' | 'currency_given' | 'iap' | 'device_update';
+export declare type CampaignType = 'push';
+export declare type ActionType = 'impression' | 'engaged' | 'button_click' | 'influenced';
 
 /** Hardcode: Events types. */
 export const eventTypes: {
-  sessionStartEvent: EventType;
-  namedEvent: EventType;
-  userUpdateEvent: EventType;
+  currencyGiven: EventType;
   deviceUpdateEvent: EventType;
+  namedEvent: EventType;
   purchaseEvent: EventType;
+  genericCampaignEvent: EventType;
+  sessionStartEvent: EventType;
+  userUpdateEvent: EventType;
 } = {
+  currencyGiven: 'currency_given',
   deviceUpdateEvent: 'device_update',
+  genericCampaignEvent: 'generic_campaign_event',
   namedEvent: 'event',
   purchaseEvent: 'purchase',
   sessionStartEvent: 'session_start',
@@ -27,6 +33,24 @@ export interface IEventDBData {
   name?: string;
   payload?: object;
   attributes?: object;
+}
+
+export interface IPurchaseEventDBData {
+  type: EventType;
+  time: number;
+  seqnum: number;
+  cost: number;
+  currency: string;
+  item: string;
+  quantity: number;
+}
+
+export interface ICurrencyGivenDBData {
+  type: EventType;
+  time: number;
+  seqnum: number;
+  given_currency: string;
+  given_amount: number;
 }
 
 export interface IQAWrappedEvent {
@@ -47,6 +71,11 @@ export interface ISessionStartParams {
   name: string;
 }
 
+export interface ICurrencyParams {
+  amount: number;
+  currency: string;
+}
+
 export interface IPurchaseParams {
   cost: number;
   currency: string;
@@ -59,28 +88,48 @@ export interface IUserUpdateWithDateParams {
   date: Date;
 }
 
+export interface IGenericCampaignEventParams {
+  actionType: ActionType;
+  campaignType: CampaignType;
+  campaignId: number;
+  id: number;
+}
+
 export interface IUserUpdateClientInfoAttributes {
-  'swrve.user_id': string;
   'swrve.browser': string | null;
   'swrve.browser_version': string | null;
-  'swrve.os': string | null;
-  'swrve.os_version': string | null;
   'swrve.device_height': string;
   'swrve.device_width': string;
+  'swrve.install_date': string;
   'swrve.language': string;
-  'swrve.timezone': string | null;
   'swrve.latitude': string;
   'swrve.longitude': string;
+  'swrve.os': string | null;
+  'swrve.os_version': string | null;
+  'swrve.permission.web.push_notifications': string;
+  'swrve.sdk_version': string;
+  'swrve.timezone_name': string | null;
   'swrve.user_agent': string | null;
-  'swrve.install_date': string;
+  'swrve.user_id': string;
+  'swrve.utc_offset_seconds': number;
+}
+
+export interface IGenericCampaignEventDBData {
+  actionType: ActionType;
+  campaignType: CampaignType;
+  campaignId: number;
+  id: number;
+  seqnum: number;
+  type: EventType;
+  time: number;
 }
 
 export interface IPurchaseEventDBData {
-  type: EventType;
-  time: number;
-  seqnum: number;
   cost: number;
   currency: string;
   item: string;
   quantity: number;
+  seqnum: number;
+  type: EventType;
+  time: number;
 }

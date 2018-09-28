@@ -4,13 +4,12 @@ const path = require('path');
 /** Webpack Plugins */
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const TypedocWebpackPlugin = require('typedoc-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const isProd = nodeEnv === 'production';
 const isDocs = nodeEnv === 'generatedocs';
+const pathsToClean = ['./dist'];
 
-const pathsToClean = ['dist'];
 const plugins = [
   new webpack.DefinePlugin({
     'process.env': {
@@ -19,28 +18,6 @@ const plugins = [
   }),
   new CleanWebpackPlugin(pathsToClean)
 ];
-
-/** Production Environment Plugins */
-if (isProd) {
-  /** UglifyJs */
-  plugins.push(
-    new UglifyJsPlugin({
-      test: /\.js$/i,
-      parallel: true,
-      uglifyOptions: {
-        ie8: false,
-        ecma: 6,
-        warnings: true,
-        mangle: true,
-        output: {
-          beautify: false,
-          comments: false
-        }
-      },
-      sourceMap: true
-    })
-  );
-}
 
 if (isDocs) {
   /** Typedoc */
@@ -56,25 +33,30 @@ if (isDocs) {
 }
 
 module.exports = {
-  entry: './src/SwrveSDK.ts',
+  entry: {
+    SwrveSDK: './src/SwrveSDK.ts',
+		SwrveWorker: './src/SwrveWorker.js',
+	},
   devtool: 'inline-source-map',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'SwrveSDK.js',
-    // libraryTarget: "commonjs2",
+    filename: '[name].js', // The left hand key of the 'entry' section defines what [name] is
     library: "SwrveSDK",
     publicPath: '/dist'
   },
   module: {
-    rules: [{
-        enforce: 'pre',
+    rules: [
+      {
         test: /\.ts$/,
-        loader: 'tslint-loader',
+        enforce: 'pre',
         exclude: /node_modules/,
-        options: {
-          failOnHint: true,
-          configuration: require('./tslint.json')
-        }
+        use:[{
+          loader: 'tslint-loader',
+          options: {
+            failOnHint: true,
+            tsConfigFile: 'tsconfig.json'
+          }
+        }]
       },
       {
         test: /\.ts$/,
