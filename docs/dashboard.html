@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico">
+    <meta charset="UTF-8">
+    <title>Swrve Demo App</title>
+  <link href="css/styles.css" rel="stylesheet"></head>
+  <body>
+    <!-- TODO: Replace this 'pure' html with Pug. (add to webpack) -->
+<nav class="navbar navbar-light bg-light">
+  <div class="d-flex flex-row justify-content-between w-100">
+    <a class="navbar-brand" href="#">
+      <img class="logo-img-inapp" src="https://oozx0w2f09-flywheel.netdna-ssl.com/wp-content/uploads/2016/03/Swrve-logo-single.png"
+        alt="logo" />
+    </a>
+    <div class="clearfix">
+      <div class="float-right">
+
+        <button class="btn btn-sm btn-outline-secondary session-end">Logout</button>
+
+        <a href="replaceme" class="btn-qa-link" target="_blank"><button class="btn btn-outline-warning qa-btn d-none">QA</button></a>
+        <button class="btn btn-primary flush-events-btn">Flush Events</button>
+      </div>
+      <div>
+        <small class="device-info float-right">
+          <div class="sdk-install-date text-right text-warning"></div>
+          <div class="session-start-date text-right text-success"></div>
+          <div class="general-info text-right"></div>
+        </small>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container dash">
+  <!-- Nav tabs-->
+  <ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item"><a class="nav-link active" id="tab1-tab" data-toggle="tab" href="#tab1" role="tab"
+        aria-controls="tab1" aria-selected="true">Events</a></li>
+    <li class="nav-item"><a class="nav-link" id="tab3-tab" data-toggle="tab" href="#tab3" role="tab" aria-controls="tab3"
+        aria-selected="false">Virtual Economy Purchase</a></li>
+    <li class="nav-item"><a class="nav-link" id="tab4-tab" data-toggle="tab" href="#tab4" role="tab" aria-controls="tab4"
+        aria-selected="false">User Update</a></li>
+    <li class="nav-item"><a class="nav-link" id="tab5-tab" data-toggle="tab" href="#tab5" role="tab" aria-controls="tab5"
+        aria-selected="false">User Update With Date</a></li>
+    <li class="nav-item"><a class="nav-link" id="tab6-tab" data-toggle="tab" href="#tab6" role="tab" aria-controls="tab6"
+        aria-selected="false">Push notifications</a></li>
+    <li class="nav-item"><a class="nav-link" id="tab7-tab" data-toggle="tab" href="#tab7" role="tab" aria-controls="tab7"
+        aria-selected="false">Events Queue</a></li>
+    <li class="nav-item"><a class="nav-link" id="tab8-tab" data-toggle="tab" href="#tab8" role="tab" aria-controls="tab8"
+      aria-selected="false">Currency Given</a></li>
+  </ul>
+  <!-- Tab panes-->
+  <div class="tab-content">
+    <div class="tab-pane pt-2 active" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
+      <h4>Events</h4>
+      <p>Send events to Swrve</p>
+      <label>Event Name</label>
+      <input class="form-control form-control-lg event-name" type="text" value="audio.played" />
+      <br>
+      <label>Payloads</label>
+      <textarea class="form-control form-control-lg event-payload" type="text" />{"artist":"talking heads", "songname": "This Must Be The Place"}</textarea>
+      <br>
+      <button class="btn btn-primary simple-event-btn">Send event</button>
+    </div>
+    <div class="tab-pane pt-2" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
+      <h4>Virtual Economy Purchase</h4> <p></p>
+      <button class="btn btn-primary iap-btn">Send VEP</button>
+    </div>
+    <div class="tab-pane pt-2" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
+      <h4>User Update</h4>
+      <p>Allows the setting of user properties</p>
+      <p>
+        <label>Key</label>
+        <input class="form-control form-control-lg user-update-key" type="text" value="age" />
+        <label>Value</label>
+        <input class="form-control form-control-lg user-update-value" type="text" value="28" />
+      </p>
+      <button class="btn btn-primary user-update-btn">Send user update</button>
+    </div>
+    <div class="tab-pane pt-2" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
+      <h4>User Update With Date</h4>
+      <p>Takes two params. The first is an event name and the second is a Date object.</p>
+      <p>
+        <label>Name</label>
+        <input class="form-control form-control-lg user-update-with-date-input" type="text" placeholder="Name" value="Some_name" />
+      </p>
+      <p>
+        <label>Date</label>
+        <p>
+          In this case we will use the current date(object new Date())
+        </p>
+      </p>
+      <button class="btn btn-primary user-update-with-date-btn">Send user update with date</button>
+    </div>
+    <div class="tab-pane pt-2" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
+      <h4>Push notifications</h4>
+      <p>
+        Use the following buttons to subscribe and unsubscribe from pushes
+      </p>
+      <div class="clearfix">
+        <button class="btn btn-primary float-right push-sub-btn btn-success">Subscribe</button>
+      </div>
+      <div class="clearfix">
+        <button class="btn btn-primary float-right push-unsub-btn btn-danger">Unsubscribe</button>
+      </div>
+    </div>
+    <div class="tab-pane pt-2" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
+      <h4>Events Queue</h4>
+      <p>A list of the currently queued events.</p>
+      <button class="btn btn-primary get-events-btn">Get Events</button>
+      <div>
+        <ul class='events-list'></ul>
+      </div>
+    </div>
+    <div class="tab-pane pt-2" id="tab8" role="tabpanel" aria-labelledby="tab8-tab">
+      <h4>Currency Given</h4>
+      <p>Send a currency given event</p>
+      <p>
+        <label>Currency</label>
+        <input class="form-control form-control-lg currency-given-input-currency" type="text" placeholder="Currency" value="euro" />
+      </p>
+      <p>
+        <label>Amount</label>
+        <input class="form-control form-control-lg currency-given-input-amount" type="number" placeholder="Amount" value=10.5 />
+      </p>
+      <button class="btn btn-primary currency-given-input-btn">Queue Currency Given</button>
+    </div>
+  </div>
+</div>
+
+
+    <script  type="text/javascript" src="js/SwrveSDK.js"></script>
+  <script type="text/javascript" src="js/dashboard.bundle.js"></script></body>
+</html>
