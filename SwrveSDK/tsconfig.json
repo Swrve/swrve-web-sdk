@@ -1,19 +1,21 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "lib": [
       "dom",
       "es5",
       "es6",
       "es2016.array.include",
       "es2015.promise",
+      "es2015",
       "webworker"
     ],
-    "outDir": "dist/lib",
-    "rootDir": "src",
-    "skipLibCheck": true,
+    "module": "ES6",
+    "moduleResolution": "node",
+    "outDir": "./dist/types",
     "sourceMap": true,
+    "target": "ES6",
   },
   "include": [
     "./src"

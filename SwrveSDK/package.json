@@ -1,11 +1,8 @@
 {
   "name": "@swrve/web-sdk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Swrve Inc.",
   "license": "Apache-2.0",
-  "main": "dist/SwrveSDK.js",
-  "types": "dist/types/index.d.ts",
-  "readme": "../README.md",
   "keywords": [
     "swrve",
     "sdk",
@@ -19,26 +16,40 @@
     "marketing",
     "platform"
   ],
+  "homepage": "https://github.com/Swrve/swrve-web-sdk#readme",
+  "bugs" : {
+    "url" : "https://github.com/Swrve/swrve-web-sdk/issues"
+  },
+  "repository": {
+    "type" : "git",
+    "url" : "git@github.com:Swrve/swrve-web-sdk.git"
+  },
+  "files": ["dist/**/*"],
+  "browser": "dist/SwrveSDK.js",
   "scripts": {
     "bundle": "yarn run bundle:prod",
-    "bundle:dev": "webpack --config webpack.config.js --progress --profile --color --watch --mode=production",
-    "bundle:prod": "NODE_ENV=production webpack --config webpack.config.js --progress --color --mode=development",
-    "bundle:release": "yarn run bundle:prod && yarn run types",
+    "bundle:dev": "webpack --config webpack.dev.js --watch",
+    "bundle:prod": "webpack --config webpack.prod.js",
+    "bundle:release": "yarn run bundle:prod",
+    "stats": "webpack --config webpack.prod.js --profile --json > stats.json && webpack-bundle-analyzer stats.json --mode static --no-open",
     "clean": "yarn cache clean && rm -rf ./dist",
-    "prepublish": "yarn bundle:release",
-    "types": "tsc --declaration --declarationDir dist/types"
+    "lint": "tslint --project ./tsconfig.json",
+    "prepublish": "yarn bundle:release"
   },
   "devDependencies": {
     "clean-webpack-plugin": "^0.1.19",
-    "ts-loader": "^4.5.0",
+    "ts-loader": "^5.2.1",
     "ts-md5": "^1.2.4",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.10.0",
     "tslint-loader": "^3.6.0",
+    "tslint-sonarts": "^1.8.0",
     "typedoc": "^0.12.0",
     "typedoc-webpack-plugin": "^1.1.4",
-    "typescript": "^3.0.3",
-    "webpack": "^4.19.1",
-    "webpack-cli": "^3.1.0"
+    "typescript": "3.0.3",
+    "webpack": "^4.20.2",
+    "webpack-bundle-analyzer": "^3.0.3",
+    "webpack-cli": "^3.1.2",
+    "webpack-merge": "^4.1.4"
   }
 }

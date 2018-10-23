@@ -1,3 +1,4 @@
+import { swrveServiceWorkerName } from '../config/AppConfigParams';
 import { ISwrveConfig, Stack } from '../interfaces/ISwrveConfig';
 
 class SwrveConfig {
@@ -32,7 +33,7 @@ class SwrveConfig {
     this.appVersion = config.appVersion || '1.0';
     this.httpTimeoutSeconds = config.httpTimeoutSeconds || 10;
     this.autoPushSubscribe = config.autoPushSubscribe || false;
-    this.serviceWorker = config.serviceWorker || 'service_worker.js';
+    this.serviceWorker = config.serviceWorker || swrveServiceWorkerName;
   }
 
   public get ExternalUserId(): string {
@@ -44,23 +45,23 @@ class SwrveConfig {
   }
 
   public get AppID(): number {
-    return this.appID as number;
+    return this.appID;
   }
 
   public get ApiKey(): string {
-    return this.apiKey as string;
+    return this.apiKey;
   }
 
   public get ApiURL(): string {
-    return this.apiURL as string;
+    return this.apiURL;
   }
 
   public get ContentURL(): string {
-    return this.contentURL as string;
+    return this.contentURL;
   }
 
   public get IdentifyURL(): string {
-    return this.identifyURL as string;
+    return this.identifyURL;
   }
 
   public get ServiceWorker(): string {

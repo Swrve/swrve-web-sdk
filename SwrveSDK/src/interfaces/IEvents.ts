@@ -1,7 +1,8 @@
 /** Internal Event */
-export declare type EventType = 'session_start' | 'generic_campaign_event' | 'event' | 'user' | 'purchase' | 'currency_given' | 'iap' | 'device_update';
+export declare type EventType = 'session_start' | 'generic_campaign_event' | 'event' | 'user' | 'purchase' | 'currency_given' | 'iap' | 'device_update' | 'qa_log_event';
 export declare type CampaignType = 'push';
 export declare type ActionType = 'impression' | 'engaged' | 'button_click' | 'influenced';
+export declare type LogType = 'event' | 'resources-downloaded' | 'campaigns-downloaded' | 'push-engaged' | 'push-received';
 
 /** Hardcode: Events types. */
 export const eventTypes: {
@@ -10,6 +11,7 @@ export const eventTypes: {
   namedEvent: EventType;
   purchaseEvent: EventType;
   genericCampaignEvent: EventType;
+  qaLogEvent: EventType;
   sessionStartEvent: EventType;
   userUpdateEvent: EventType;
 } = {
@@ -18,6 +20,7 @@ export const eventTypes: {
   genericCampaignEvent: 'generic_campaign_event',
   namedEvent: 'event',
   purchaseEvent: 'purchase',
+  qaLogEvent: 'qa_log_event',
   sessionStartEvent: 'session_start',
   userUpdateEvent: 'user',
 };
@@ -26,42 +29,55 @@ export const eventTypes: {
 export const firstSessionEventName: string = 'Swrve.first_session';
 export const sessionStartEventName: string = 'Swrve.session_start';
 
-export interface IEventDBData {
-  type: EventType;
+// Stored in DB
+interface IStoredEvent {
   time: number;
+  type: EventType;
   seqnum: number;
-  name?: string;
-  payload?: object;
-  attributes?: object;
 }
 
-export interface IPurchaseEventDBData {
-  type: EventType;
-  time: number;
-  seqnum: number;
+export interface ICurrencyGivenDBData extends IStoredEvent {
+  given_currency: string;
+  given_amount: number;
+}
+
+export interface IEventDBData extends IStoredEvent  {
+  name?: string;
+  payload?: object;
+  attributes?: IUserUpdateClientInfoAttributes|IUserUpdateWithDateParams;
+}
+
+export interface IGenericCampaignEventDBData extends IStoredEvent  {
+  actionType: ActionType;
+  campaignType: CampaignType;
+  campaignId: number;
+  id: number;
+}
+
+export interface IPurchaseEventDBData extends IStoredEvent  {
   cost: number;
   currency: string;
   item: string;
   quantity: number;
 }
 
-export interface ICurrencyGivenDBData {
-  type: EventType;
-  time: number;
-  seqnum: number;
-  given_currency: string;
-  given_amount: number;
-}
-
-export interface IQAWrappedEvent {
+export interface IQAWrappedEvent extends IStoredEvent  {
   log_source: string;
-  log_details: IEventDBData;
-  seqNum: number;
-  type: string;
-  time: number;
+  log_details: IQAEventLogDetails;
   log_type: string;
 }
 
+// Submodel of IQAWrappedEvent
+export interface IQAEventLogDetails {
+  type: EventType;
+  parameters: any;
+  seqnum: number;
+  client_time: number;
+}
+
+export declare type StorableEvent = ICurrencyGivenDBData | IEventDBData | IGenericCampaignEventDBData | IPurchaseEventDBData | IQAWrappedEvent;
+
+// Method signatures
 export interface INamedEventParams {
   name?: string; // not needed for session start and swrve events
   payload?: object;
@@ -96,40 +112,21 @@ export interface IGenericCampaignEventParams {
 }
 
 export interface IUserUpdateClientInfoAttributes {
-  'swrve.browser': string | null;
-  'swrve.browser_version': string | null;
-  'swrve.device_height': string;
-  'swrve.device_width': string;
-  'swrve.install_date': string;
-  'swrve.language': string;
-  'swrve.latitude': string;
-  'swrve.longitude': string;
-  'swrve.os': string | null;
-  'swrve.os_version': string | null;
-  'swrve.permission.web.push_notifications': string;
-  'swrve.sdk_version': string;
-  'swrve.timezone_name': string | null;
-  'swrve.user_agent': string | null;
-  'swrve.user_id': string;
-  'swrve.utc_offset_seconds': number;
-}
-
-export interface IGenericCampaignEventDBData {
-  actionType: ActionType;
-  campaignType: CampaignType;
-  campaignId: number;
-  id: number;
-  seqnum: number;
-  type: EventType;
-  time: number;
-}
-
-export interface IPurchaseEventDBData {
-  cost: number;
-  currency: string;
-  item: string;
-  quantity: number;
-  seqnum: number;
-  type: EventType;
-  time: number;
+  [s: string]: string|number; // Any custom attributes
+  'swrve.browser'?: string | null;
+  'swrve.browser_version'?: string | null;
+  'swrve.device_height'?: string | null;
+  'swrve.device_width'?: string | null;
+  'swrve.install_date'?: string | null;
+  'swrve.language'?: string | null;
+  'swrve.latitude'?: string | null;
+  'swrve.longitude'?: string | null;
+  'swrve.os'?: string | null;
+  'swrve.os_version'?: string | null;
+  'swrve.permission.web.push_notifications'?: string | null;
+  'swrve.sdk_version'?: string | null;
+  'swrve.timezone_name'?: string | null;
+  'swrve.user_agent'?: string | null;
+  'swrve.user_id'?: string | null;
+  'swrve.utc_offset_seconds'?: number | null;
 }

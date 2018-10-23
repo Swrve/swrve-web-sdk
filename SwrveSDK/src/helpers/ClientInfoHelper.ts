@@ -1,6 +1,7 @@
 import { IBrowser, IBrowserInfo, IClientOS, IScreen } from '../interfaces/IClientInfo';
 import IDictionary from '../interfaces/IDictionary';
 import Swrve from '../Swrve';
+import { isNil } from '../util/Nil';
 import SwrveLogger from '../util/SwrveLogger';
 import {
   appStore,
@@ -26,10 +27,9 @@ import {
 abstract class ClientInfoHelper {
 
   public static getClientInfo(): IDictionary<string | number> {
-
     const osInfo: IClientOS = this.getOS();
     const browserInfo: IBrowser = this.getBrowserInfo();
-    const deviceProperties: IDictionary<string | number> = {
+    return {
       [SWRVE_DEVICE_ID]: this.getDeviceId(),
       [SWRVE_OS]: osInfo.name,
       [SWRVE_OS_VERSION]: osInfo.version,
@@ -44,8 +44,6 @@ abstract class ClientInfoHelper {
       [SWRVE_BROWSER_NAME]: browserInfo.name,
       [SWRVE_BROWSER_VERSION]: browserInfo.version,
     };
-
-    return deviceProperties;
   }
   /** OS */
   public static getOS(): IClientOS {
@@ -53,7 +51,7 @@ abstract class ClientInfoHelper {
 
     const versionInfo: RegExpMatchArray | null = navigator.userAgent.match(/\((.*?)\)/);
     if (versionInfo && versionInfo.length >= 2) {
-      clientOS.version = versionInfo[1] as string;
+      clientOS.version = versionInfo[1];
     }
 
     let os: { name: string; regex: RegExp };
@@ -95,7 +93,15 @@ abstract class ClientInfoHelper {
 
   /** UTC Offset(Seconds) */
   public static getUTCOffsetSeconds(date: Date): number {
-    return date.getTimezoneOffset() * 6000;
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/getTimezoneOffset
+    // Returns the difference between local time and UTC time in minutes and thus for our system we need to invert
+    // So UTC+1 returns -60 and UTC-1 returns 60
+    const utcOffsetSeconds = (date.getTimezoneOffset() * -60);
+
+    // Javascript use IEEE 754 standard for floating point arithmetic
+    // which allows for signed zero values. To avoid this madness being
+    // pass to our backend we need to remove the sign information
+    return utcOffsetSeconds === -0 ? 0 : utcOffsetSeconds;
   }
 
   /** CountryCode */
@@ -122,7 +128,8 @@ abstract class ClientInfoHelper {
 
   /** Browser Information */
   public static getBrowserInfo(): IBrowser {
-
+    const safariVersionRegex = new RegExp('version\/(([0-9])+(\.([0-9])+)+)');
+    const defaultVersionRegex = new RegExp('rv:(([0-9])+(.([0-9])+)+)');
     const clientBrowser: IBrowser = { name: 'Unknown', version: 'N/A' };
     const userAgent: string = navigator.userAgent.toLowerCase();
     const browsersInfo: IBrowserInfo = this.checkBrowser();
@@ -130,27 +137,30 @@ abstract class ClientInfoHelper {
     let match: RegExpMatchArray | null;
 
     for (const key in browsersInfo) {
-      if (browsersInfo[key]) {
-        clientBrowser.name = key;
+      if (isNil(browsersInfo[key])) {
+        continue;
+      }
 
-        /** Safari Special */
-        if (key === 'safari') {
-          match = userAgent.match(new RegExp('version\/(([0-9])+(\.([0-9])+)+)'));
-          clientBrowser.version = match ? match[1] : 'N/A';
-          return clientBrowser;
-        }
+      clientBrowser.name = key;
 
-        /** Microsoft Special */
-        match = userAgent.match(new RegExp(`(${(key === 'msIE' ? 'msIE|edge' : key)})( |\/)(([0-9])+(.([0-9])+)+)`));
-
-        if (match) {
-          clientBrowser.version = match[3] || 'N/A';
-        } else {
-          match = userAgent.match(new RegExp('rv:(([0-9])+(.([0-9])+)+)'));
-          clientBrowser.version = match ? match[1] : 'N/A';
-        }
+      /** Safari Special */
+      if (key === 'safari') {
+        match = userAgent.match(safariVersionRegex);
+        clientBrowser.version = match ? match[1] : 'N/A';
         return clientBrowser;
       }
+
+      /** Microsoft Special */
+      match = userAgent.match(new RegExp(`(${(key === 'msIE' ? 'msIE|edge' : key)})( |\/)(([0-9])+(.([0-9])+)+)`));
+      if (match) {
+        clientBrowser.version = match[3] || 'N/A';
+        return clientBrowser;
+      }
+
+      /** Fallback Default */
+      match = userAgent.match(defaultVersionRegex);
+      clientBrowser.version = match ? match[1] : 'N/A';
+      return clientBrowser;
     }
 
     SwrveLogger.errorMsg('Cannot identify browser');

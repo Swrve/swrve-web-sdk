@@ -19,17 +19,29 @@ abstract class SwrveLogger {
   private static parseMsg(type: string, message: string | Error): boolean {
     const additionalMsg: any = (typeof message !== 'string') ? message : undefined;
     const mainMessage: string = `${messageConfig.title} ${type}: ${additionalMsg ? '' : message}`;
+    let logLevel = null;
 
     switch (type) {
       case messageConfig.types.info:
-        // tslint:disable-next-line:no-console
-        return !SwrveEnvironment.ProdMode && this.outputMsg(console.info, mainMessage, additionalMsg) || true;
+        logLevel = console.info;
+        if (!SwrveEnvironment.ProdMode) {
+          this.outputMsg(logLevel, mainMessage, additionalMsg);
+        } else {
+          return false;
+        }
+        return true;
       case messageConfig.types.warn:
-        // tslint:disable-next-line:no-console
-        return !SwrveEnvironment.ProdMode && this.outputMsg(console.warn, mainMessage, additionalMsg) || true;
+        logLevel = console.warn;
+        if (!SwrveEnvironment.ProdMode) {
+          this.outputMsg(logLevel, mainMessage, additionalMsg);
+        } else {
+          return false;
+        }
+        return true;
       case messageConfig.types.error:
-        // tslint:disable-next-line:no-console
-        return this.outputMsg(console.error, mainMessage, additionalMsg) || true;
+        logLevel = console.error;
+        this.outputMsg(logLevel, mainMessage, additionalMsg);
+        return true;
     }
   }
 
@@ -37,7 +49,7 @@ abstract class SwrveLogger {
     if (additionalMsg) {
       console.group(mainMsg);
       if (Array.isArray(additionalMsg)) {
-        additionalMsg.map((msg: any): void => { outputMethod(msg); });
+        additionalMsg.forEach((msg: any): void => { outputMethod(msg); });
       } else {
         outputMethod(additionalMsg);
       }

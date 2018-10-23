@@ -10,7 +10,7 @@ import { IRESTResponse } from './interfaces/IRESTClient';
 import RESTClient from './networking/RESTClient';
 import LocalStorageClient from './storage/LocalStorageClient';
 import Swrve from './Swrve';
-import { isNil } from './util/Nil';
+import { isPresent } from './util/Nil';
 import SwrveLogger from './util/SwrveLogger';
 
 class ResourceCampaignsManager implements IBackgroundProcessor {
@@ -29,16 +29,15 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
   public async getInfoForSession(): Promise<IInfoForSession | void> {
     const session: Swrve = Swrve.getCurrentInstance();
     const localStorageClient = new LocalStorageClient();
+    const hasRefreshDelay = isPresent(localStorageClient.fetchLastFlushRefreshDelay(session.Profile.UserId));
 
-    if (session.Profile.Etag) {
+    if (session.Profile.Etag && hasRefreshDelay) {
       /**
        * Due the volatility of browser storage,
        * we need to ensure that if there is an Etag in memory
        * that we definitely have items stored to match it. if not purge Etag
        */
-      if (isNil(localStorageClient.fetchLastFlushRefreshDelay(session.Profile.UserId))) {
-        Swrve.getCurrentInstance().Profile.setEtag(null);
-      }
+      Swrve.getCurrentInstance().Profile.setEtag(null);
     }
 
     try {
@@ -80,7 +79,7 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
   }
 
   public processInBackground() {
-    if (this.isProcessing === true) {
+    if (this.isProcessing) {
       // The previous process is still running
       return null;
     }
@@ -142,7 +141,7 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
     return `${session.Config.ContentURL}/${resourcesCampaignURL}?${sanitizedQueryParams}`;
   }
 
-  public async getResourcesAndCampaigns(): Promise<any> {
+  public async getResourcesAndCampaigns(): Promise<IRESTResponse> {
     const url: string = this.resourceAndCampaignRequestUrl(Swrve.getCurrentInstance());
     return RESTClient.get(url);
   }

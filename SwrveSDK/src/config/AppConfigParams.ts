@@ -19,6 +19,9 @@ export const webWorkerDbName: string = 'SwrveWebWorkerDB';
 export const swrveDefaultDBName: string = 'SwrveWebSDK';
 export const swrveDefaultDBVersion: number = 1;
 
+/** Swrve Push Registration ServiceWorker */
+export const swrveServiceWorkerName: string = 'SwrveWorker.js';
+
 /** Swrve Event Schema Version */
 export const swrveVersion: number = 3;
 

@@ -4,7 +4,9 @@ import {
   ICurrencyParams,
   INamedEventParams,
   IPurchaseParams,
+  IUserUpdateClientInfoAttributes,
   IUserUpdateWithDateParams,
+  StorableEvent,
 } from './interfaces/IEvents';
 import { ISwrveConfig } from './interfaces/ISwrveConfig';
 import { IValidateError } from './interfaces/ISwrveValidator';
@@ -58,7 +60,7 @@ class SwrveSDK {
     SwrveSDK.checkInstance().namedEvent(params);
   }
 
-  public static userUpdate(attributes: object): void {
+  public static userUpdate(attributes: IUserUpdateClientInfoAttributes): void {
     SwrveSDK.checkInstance().userUpdate(attributes);
   }
 
@@ -74,7 +76,7 @@ class SwrveSDK {
     SwrveSDK.checkInstance().currencyGiven(params);
   }
 
-  public static getQueuedEvents(): any {
+  public static getQueuedEvents(): StorableEvent[] {
     return SwrveSDK.checkInstance().getQueuedEvents();
   }
 
@@ -92,6 +94,14 @@ class SwrveSDK {
 
   public static unregisterPush(onSuccess?: () => void, onFailure?: (err?: Error) => void): void {
     return SwrveSDK.checkInstance().unregisterPush(onSuccess, onFailure);
+  }
+
+  public static getUserId(): string {
+    return SwrveSDK.checkInstance().getUserID;
+  }
+
+  public static getExternalUserId(): string {
+    return SwrveSDK.checkInstance().Config.ExternalUserId;
   }
 
   public static shutdown(): void {

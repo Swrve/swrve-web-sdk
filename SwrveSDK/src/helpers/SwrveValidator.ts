@@ -137,7 +137,7 @@ abstract class SwrveValidator {
     /** Development Errors */
     if (!SwrveEnvironment.ProdMode) {
       SwrveLogger.errorMsg(`${messageConfig.title} ${messageConfig.types.error}: ${errors.mainError}`);
-      errors.devErrors.map((devError: string) => {
+      errors.devErrors.forEach((devError: string) => {
         SwrveLogger.errorMsg(` ${devError}`);
       });
     } else {

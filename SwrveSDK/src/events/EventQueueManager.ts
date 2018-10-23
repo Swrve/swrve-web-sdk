@@ -1,6 +1,7 @@
 import SwrveConfig from '../config/SwrveConfig';
 import EventAPIClient from '../events/EventAPIClient';
 import { IBackgroundProcessor } from '../interfaces/IBackgroundProcessor';
+import { IRESTResponse } from '../interfaces/IRESTClient';
 import { IFlushConfig } from '../interfaces/ISwrveConfig';
 import LocalStorageClient from '../storage/LocalStorageClient';
 import Swrve from '../Swrve';
@@ -10,6 +11,7 @@ class EventQueueManager implements IBackgroundProcessor {
 
   public timeoutProcess: number;
   public isProcessing: boolean;
+  public isSending: boolean;
   public lastProcessingStart: number;
   public lastProcessingStop: number;
 
@@ -33,12 +35,13 @@ class EventQueueManager implements IBackgroundProcessor {
     this.sessionToken = sessionToken;
     this.swrveConfig = swrveConfig;
     this.flushConfig = flushConfig;
+    this.isSending = false;
     this.localStorageClient = new LocalStorageClient();
     this.eventAPIClient = new EventAPIClient(swrveConfig.ApiURL, this.userID, this.deviceID);
   }
 
-  public init() {
-    this.processInBackground();
+  public async init() {
+    await this.processInBackground();
   }
 
   public shutdown(): void {
@@ -52,7 +55,28 @@ class EventQueueManager implements IBackgroundProcessor {
     this.timeoutProcess = undefined;
   }
 
-  public sendEvents() {
+  public deleteEvents(eventKeys: string[]): void {
+    SwrveLogger.infoMsg('Deleting Events from Queue');
+    eventKeys.forEach((key) => {
+      this.localStorageClient.deleteEventOnQueue(key);
+    });
+  }
+
+  public async sendEvents() {
+    const events = this.localStorageClient.fetchEventsFromQueue(this.userID);
+    const eventKeys = this.localStorageClient.fetchEventKeys(this.userID);
+    const onSuccess = (response: IRESTResponse) => {
+      this.deleteEvents(eventKeys);
+    };
+
+    const onFailure = (response: IRESTResponse) => {
+      if (response.statusCode < 500) {
+        this.deleteEvents(eventKeys);
+      } else {
+        SwrveLogger.errorMsg(`Swrve API responded with status code: ${response.statusCode} and body: ${response.jsonBody}. Leaving events in queue`);
+      }
+    };
+
     const eventParams = {
       apiURL: this.swrveConfig.ApiURL,
       appVersion: this.swrveConfig.AppVersion,
@@ -61,24 +85,33 @@ class EventQueueManager implements IBackgroundProcessor {
       userId: this.userID,
     };
 
-    const events = this.localStorageClient.fetchEventsFromQueue(this.userID);
-    if (events.length > 0) {
-      this.eventAPIClient.sendEventBatch(eventParams, events);
+    if (this.isSending) {
+      SwrveLogger.warnMsg('Swrve Event Queue is still sending...');
+      return;
     }
 
-    this.localStorageClient.fetchEventKeys(this.userID).forEach((key) => {
-      this.localStorageClient.deleteEventOnQueue(key);
-    });
+    this.isSending = true;
+    try {
+      if (events.length > 0) {
+        await this.eventAPIClient.sendEventBatch(eventParams, events, onSuccess, onFailure);
+      }
+    } catch (err) {
+      SwrveLogger.warnMsg('There was an error sending the event batch');
+      SwrveLogger.warnMsg(err);
+    } finally {
+      this.isSending = false;
+    }
   }
 
-  public processInBackground() {
-    if (this.isProcessing === true) {
+  public async processInBackground() {
+    if (this.isProcessing) {
       // The previous process is still running
+      SwrveLogger.warnMsg('EventQueueManager is already processing');
       return null;
     }
     this.setAsStarted();
     try {
-      this.sendEvents();
+      await this.sendEvents();
     } catch (err) {
       SwrveLogger.errorMsg('SwrveSDK - An error has occured processing events');
       SwrveLogger.errorMsg(err);

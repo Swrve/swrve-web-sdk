@@ -132,7 +132,7 @@ class SwrveProfile {
   public getSwrveProfileFromExternalUserId(externalUserId: string): ISwrveProfile {
     /** create profile object from checking the DB for a row with external User Id */
     try {
-      const data: ISwrveProfile = SwrveProfile.getSwrveProfileFromStorage(externalUserId as string);
+      const data: ISwrveProfile = SwrveProfile.getSwrveProfileFromStorage(externalUserId);
       if (!isNil(data) && this.isValidResultProfile(data)) {
         SwrveLogger.infoMsg(`Received from Storage: ${data.userId} | ${data.extUserId} | ${data.seqnum} | ${data.firstSession} | ${data.lastSession} | ${data.etag}`);
         return data;
@@ -177,7 +177,7 @@ class SwrveProfile {
   public static getSwrveProfileFromStorage(extUserId: string): ISwrveProfile {
     const localStorageClient = new LocalStorageClient();
     const userId = localStorageClient.fetchUserID(extUserId);
-    const profile = {
+    return {
       etag: localStorageClient.fetchLastETag(userId),
       extUserId,
       firstSession: localStorageClient.fetchFirstSession(userId),
@@ -185,8 +185,7 @@ class SwrveProfile {
       qa: localStorageClient.fetchQAStatus(userId),
       seqnum: localStorageClient.fetchSeqnum(userId),
       userId,
-    } as ISwrveProfile;
-    return profile;
+    };
   }
 
   private saveSwrveProfileToStorage(profile: ISwrveProfile): void {

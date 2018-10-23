@@ -8,10 +8,14 @@ import {
   IEventDBData,
   IGenericCampaignEventDBData,
   IPurchaseEventDBData,
+  IQAEventLogDetails,
+  IQAWrappedEvent,
+  IUserUpdateClientInfoAttributes,
+  IUserUpdateWithDateParams,
 } from '../interfaces/IEvents';
 
 class EventFactory {
-  public constructEvent(seqnum: number, isQA: boolean, time: number, type: string, name?: string, payload?: object): IEventDBData {
+  public constructEvent(seqnum: number, time: number, type: string, name?: string, payload?: object): IEventDBData {
     const requestBody: IEventDBData = {
       seqnum,
       time,
@@ -26,25 +30,83 @@ class EventFactory {
     return requestBody;
   }
 
-  public constructSessionStart(seqnum: number, isQA: boolean, time: number, type: string, name?: string, payload?: object): IEventDBData {
-    return this.constructEvent(seqnum, isQA, time, type, name, payload);
+  public constructQAEvent(event: IEventDBData): IQAWrappedEvent {
+    const logDetails: IQAEventLogDetails = {
+      client_time: event.time,
+      parameters: {
+        name: event.name,
+      },
+      seqnum: event.seqnum,
+      type: event.type,
+    };
+
+    if (event.name && event.payload) {
+      logDetails.parameters = {
+        name: event.name,
+        payload: event.payload,
+      };
+    }
+
+    if (event.name && !event.payload) {
+      logDetails.parameters = {
+        name: event.name,
+      };
+    }
+
+    if (!event.name && !event.payload) {
+      logDetails.parameters = {};
+    }
+
+    return this.constructQAWrappedEvent(logDetails);
+  }
+
+  public constructSessionStart(seqnum: number, time: number, name?: string, payload?: object): IEventDBData {
+    return this.constructEvent(seqnum, time, eventTypes.sessionStartEvent, name, payload);
+  }
+
+  public constructQASessionStart(sessionStart: IEventDBData): IQAWrappedEvent {
+    return this.constructQAEvent(sessionStart);
   }
 
     /** User Update */
-  public constructUserUpdate(seqnum: number, isQA: boolean, time: number, attributes: object): IEventDBData {
-    const requestBody: IEventDBData = {
+  public constructUserUpdate(seqnum: number, time: number, attributes: IUserUpdateClientInfoAttributes|IUserUpdateWithDateParams): IEventDBData {
+    return {
       attributes,
       seqnum,
       time,
       type: eventTypes.userUpdateEvent,
+    } as IEventDBData;
+  }
+
+  /** QA variant of User Update */
+  public constructQAUserUpdate(userUpdate: IEventDBData): IQAWrappedEvent {
+    const logDetails: IQAEventLogDetails = {
+      client_time: userUpdate.time,
+      parameters: {
+        attributes: userUpdate.attributes,
+      },
+      seqnum: userUpdate.seqnum,
+      type: userUpdate.type,
     };
 
-    return requestBody;
+    return this.constructQAWrappedEvent(logDetails);
+  }
+
+  /** User Update With Date */
+  public constructUserUpdateWithDate(seqnum: number, time: number, name: string, date: Date): IEventDBData {
+    const utcDate = DateHelper.dateToUTCDate(date);
+    const attributes = { name, date: DateHelper.dateToSwrveISOString(utcDate) };
+    return this.constructUserUpdate(seqnum, time, attributes);
+  }
+
+  /** QA variant of User Update with Date */
+  public constructQAUserUpdateWithDate(userUpdateWithDate: IEventDBData): IQAWrappedEvent {
+    return this.constructQAUserUpdate(userUpdateWithDate);
   }
 
   /** Generic Campaign Event */
-  public constructGenericCampaignEvent(seqnum: number, isQA: boolean, time: number, campaignType: CampaignType, campaignId: number, id: number, actionType: ActionType): IGenericCampaignEventDBData {
-    const requestBody: IGenericCampaignEventDBData = {
+  public constructGenericCampaignEvent(seqnum: number, time: number, campaignType: CampaignType, campaignId: number, id: number, actionType: ActionType): IGenericCampaignEventDBData {
+    return {
       actionType,
       campaignId,
       campaignType,
@@ -53,55 +115,121 @@ class EventFactory {
       time,
       type: eventTypes.genericCampaignEvent,
     };
-
-    return requestBody;
   }
 
   /** Device Update */
-  public constructDeviceUpdate(seqnum: number, isQA: boolean, time: number, attributes: object): IEventDBData {
-    const requestBody: IEventDBData = {
+  public constructDeviceUpdate(seqnum: number, time: number, attributes: IUserUpdateClientInfoAttributes): IEventDBData {
+    return {
       attributes,
       seqnum,
       time,
-      type: eventTypes.deviceUpdateEvent as EventType,
+      type: eventTypes.deviceUpdateEvent,
     };
-
-    return requestBody;
   }
 
-    /** User Update With Date */
-  public constructUserUpdateWithDate(seqnum: number, isQA: boolean, time: number, name: string, date: Date): IEventDBData {
-    const utcDate = DateHelper.dateToUTCDate(date);
-    const attributes = { name, date: DateHelper.dateToSwrveISOString(utcDate) };
-    return this.constructUserUpdate(seqnum, isQA, time, attributes);
+  /** QA variant of Device Update */
+  public constructQADeviceUpdate(deviceUpdate: IEventDBData): IQAWrappedEvent {
+    const logDetails: IQAEventLogDetails = {
+      client_time: deviceUpdate.time,
+      parameters: {
+        attributes: deviceUpdate.attributes,
+      },
+      seqnum: deviceUpdate.seqnum,
+      type: deviceUpdate.type,
+    };
+
+    return this.constructQAWrappedEvent(logDetails);
   }
 
     /** Purchase Event */
-  public constructPurchaseEvent(seqnum: number, isQA: boolean, time: number, item: string, currency: string, cost: number, quantity: number): IPurchaseEventDBData {
-    const requestBody: IPurchaseEventDBData = {
+  public constructPurchaseEvent(seqnum: number, time: number, item: string, currency: string, cost: number, quantity: number): IPurchaseEventDBData {
+    return {
       cost,
       currency,
       item,
       quantity,
       seqnum,
       time,
-      type: eventTypes.purchaseEvent as EventType,
+      type: eventTypes.purchaseEvent,
+    };
+  }
+
+    /** QA variant of Purchase Event */
+  public constructQAPurchaseEvent(event: IPurchaseEventDBData): IQAWrappedEvent {
+    const logDetails: IQAEventLogDetails = {
+      client_time: event.time,
+      parameters: {
+        cost: event.cost,
+        currency: event.currency,
+        item: event.item,
+        quantity: event.quantity,
+      },
+      seqnum: event.seqnum,
+      type: event.type,
     };
 
-    return requestBody;
+    return this.constructQAWrappedEvent(logDetails);
   }
 
   /** Currency Given */
-  public constructCurrencyGiven(seqnum: number, isQA: boolean, time: number, currency: string, amount: number): ICurrencyGivenDBData {
-    const requestBody: ICurrencyGivenDBData = {
+  public constructCurrencyGiven(seqnum: number, time: number, currency: string, amount: number): ICurrencyGivenDBData {
+    return {
       given_amount: amount,
       given_currency: currency,
       seqnum,
       time,
-      type: eventTypes.currencyGiven as EventType,
+      type: eventTypes.currencyGiven,
+    };
+  }
+
+  /** QA variant of Currency Given */
+  public constructQACurrencyGiven(event: ICurrencyGivenDBData): IQAWrappedEvent {
+    const logDetails: IQAEventLogDetails = {
+      client_time: event.time,
+      parameters: {
+        given_amount: event.given_amount,
+        given_currency: event.given_currency,
+      },
+      seqnum: event.seqnum,
+      type: event.type,
     };
 
-    return requestBody;
+    return this.constructQAWrappedEvent(logDetails);
+  }
+
+  /** QA only events */
+  public constructQANotificationEngagedEvent(event: IEventDBData, campaignId: number, deeplink: string): IQAWrappedEvent {
+    const logDetails: IQAEventLogDetails = {
+      client_time: event.time,
+      parameters: {
+        campaign_id: campaignId,
+        payload: {
+          deeplink,
+        },
+      },
+      seqnum: event.seqnum,
+      type: event.type,
+    };
+
+    return {
+      log_details: logDetails,
+      log_source: 'sdk',
+      log_type: 'push-engaged',
+      seqnum: logDetails.seqnum,
+      time: logDetails.client_time,
+      type: 'qa_log_event',
+    };
+  }
+
+  public constructQAWrappedEvent(logDetails: IQAEventLogDetails): IQAWrappedEvent {
+    return {
+      log_details: logDetails,
+      log_source: 'sdk',
+      log_type: 'event',
+      seqnum: logDetails.seqnum,
+      time: logDetails.client_time,
+      type: 'qa_log_event',
+    };
   }
 }
 

@@ -1,4 +1,4 @@
-import { IEventDBData } from '../interfaces/IEvents';
+import { StorableEvent } from '../interfaces/IEvents';
 import { ExternalUserNamespaceKeys, GlobalNamespaceKeys, UserNamespaceKeys } from './LocalStorageSchema';
 import StorageManager from './StorageManager';
 
@@ -48,7 +48,7 @@ class LocalStorageClient {
   }
   public fetchFirstSession(userID: string): number {
     const firstSession = this.storageManager.readLocal(this.firstSessionKey(userID));
-    return firstSession ? +firstSession as number : undefined;
+    return firstSession ? +firstSession : undefined;
   }
 
   public storeLastSession(userID: string, value: number) {
@@ -56,7 +56,7 @@ class LocalStorageClient {
   }
   public fetchLastSession(userID: string): number {
     const lastSession = this.storageManager.readLocal(this.lastSessionKey(userID));
-    return lastSession ? +lastSession as number : undefined;
+    return lastSession ? +lastSession : undefined;
   }
 
   // Seqnum
@@ -64,7 +64,7 @@ class LocalStorageClient {
     return this.storageManager.writeLocal(this.seqnumKey(userID), value);
   }
   public fetchSeqnum(userID: string): number {
-    return +this.storageManager.readLocal(this.seqnumKey(userID)) as number; // 0 if undefined
+    return +this.storageManager.readLocal(this.seqnumKey(userID)); // 0 if undefined
   }
 
   // FlushFrequency
@@ -103,7 +103,7 @@ class LocalStorageClient {
   }
 
   // Events
-  public storeEventOnQueue(userID: string, event: IEventDBData) {
+  public storeEventOnQueue(userID: string, event: StorableEvent) {
     return this.storageManager.writeLocal(this.eventsQueueKey(userID), event);
   }
 
@@ -111,7 +111,7 @@ class LocalStorageClient {
     return this.storageManager.localKeys().filter(key => key.startsWith(this.eventsQueueKeyPrefix(userID)));
   }
 
-  public fetchEventsFromQueue(userID: string): IEventDBData[] {
+  public fetchEventsFromQueue(userID: string): StorableEvent[] {
     const keys = this.fetchEventKeys(userID);
     const events = [];
     keys.forEach((key) => {

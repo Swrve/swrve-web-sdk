@@ -12,15 +12,17 @@ import {
   IGenericCampaignEventParams,
   INamedEventParams,
   IPurchaseParams,
+  IUserUpdateClientInfoAttributes,
   IUserUpdateWithDateParams,
+  StorableEvent,
 } from './interfaces/IEvents';
 import { IInfoForSession } from './interfaces/IResourcesCampaigns';
 import { IFlushConfig, ISwrveConfig } from './interfaces/ISwrveConfig';
 import ResourceCampaignsManager from './ResourceCampaignsManager';
-import { isNil } from './util/Nil';
+import { isNil, isPresent, noOp } from './util/Nil';
 import SwrveLogger from './util/SwrveLogger';
 
-import { defaultFlushFrequency, defaultFlushRefreshDelay, swrveDefaultDBName } from './config/AppConfigParams';
+import { defaultFlushFrequency, defaultFlushRefreshDelay } from './config/AppConfigParams';
 import EventQueueManager from './events/EventQueueManager';
 
 import ClientInfoHelper from './helpers/ClientInfoHelper';
@@ -73,7 +75,7 @@ class Swrve {
   public get getUserID(): string {
     SwrveLogger.infoMsg('UserID Returned:');
     SwrveLogger.infoMsg(this.profile.UserId);
-    return this.profile.UserId as string;
+    return this.profile.UserId;
   }
 
   public get InstallDate(): string {
@@ -118,28 +120,11 @@ class Swrve {
   /** Public static methods */
   public async init(): Promise<Swrve | void> {
     SwrveLogger.infoMsg('Starting New SwrveSDK instance');
-
-    if (!this.hasPersistentInstallDate()) {
-      this.sessionStartedAt = Date.now(); /** session startedAt in ms */
-      this.setPersistentInstallDate();
-    }
-
-    if (!this.hasPersistentDeviceId()) {
-      this.setPersistentDeviceId();
-    }
+    this.initializePersistentData();
 
     /** Start up the profile */
     try {
-      SwrveLogger.infoMsg('Setting up profile');
-      this.profile = new SwrveProfile(this.config.ExternalUserId);
-
-      if (!this.profile.IsIdentityResolved) {
-        await this.profile.callIdentifyOnExternalUserId(this.config.ExternalUserId, this);
-
-        if (this.profile.IsIdentityResolved) {
-          SwrveLogger.infoMsg(`Identify Resolved: ${this.profile.UserId} for extUserId: ${this.profile.ExternalUserId}`);
-        }
-      }
+      await this.initializeIdentity();
 
       if (this.profile.IsIdentityResolved) {
         SwrveLogger.infoMsg(`Profile Resolved: ${this.profile.UserId} for extUserId: ${this.profile.ExternalUserId}`);
@@ -173,12 +158,12 @@ class Swrve {
         this.sendClientInfo();
 
         /** Setup push configuration */
-        if (this.config.AutoPushSubscribe === false) {
+        if (!this.config.AutoPushSubscribe) {
           SwrveLogger.infoMsg('SwrvePushManager Will not initialize. Auto subscribe is disabled');
         } else {
-          SwrveLogger.infoMsg('Initializing PushManager');
+          SwrveLogger.infoMsg(`Initializing PushManager with WebPushAPIKey: ${this.WebPushAPIKey}`);
           this.swrvePushManager = new SwrvePushManager(this.config, this.WebPushAPIKey);
-          this.swrvePushManager.init();
+          this.SwrvePushManager.init();
         }
 
         window.onbeforeunload = (): void => { Swrve.pageCloseHandler(); };
@@ -187,10 +172,9 @@ class Swrve {
         }
 
         /** inform the customer that Swrve has loaded */
-        if (this.onSwrveLoadedCallback != null) {
+        if (isPresent(this.onSwrveLoadedCallback)) {
           this.onSwrveLoadedCallback(null);
         }
-
       } else {
         Swrve.shutdown();
         throw new Error('User Profile could not be resolved');
@@ -252,12 +236,11 @@ class Swrve {
 
   /** Send all queued events from queue to Swrve server */
   public sendQueuedEvents(): void {
-    const eventQueueManager = new EventQueueManager(this.config, this.flushConfig, this.getUserID, this.sessionToken);
-    eventQueueManager.sendEvents();
+    this.eventQueueManager.sendEvents();
   }
 
   /** fetch all events currently in the queue */
-  public getQueuedEvents(): any[] {
+  public getQueuedEvents(): StorableEvent[] {
     return this.localStorageClient.fetchEventsFromQueue(this.getUserID);
   }
 
@@ -272,9 +255,9 @@ class Swrve {
     this.sessionStartInternal();
   }
 
-  public userUpdate(attributes: object): void {
+  public userUpdate(attributes: IUserUpdateClientInfoAttributes): void {
     if (attributes != null) {
-      this.userUpdateInternal(eventTypes.userUpdateEvent, attributes);
+      this.userUpdateInternal(attributes);
     } else {
       SwrveLogger.errorMsg('There must be at least one key/value pair, this will not be queued');
     }
@@ -305,8 +288,20 @@ class Swrve {
     }
   }
 
-  public pushNotificationEngagedEvent(id: number): void {
-    this.eventInternal('event', { name:`Swrve.Messages.Push-${id}.engaged` });
+  public pushNotificationEngagedEvent(campaignId: number, deeplink?: string): void {
+    const eventName = `Swrve.Messages.Push-${campaignId}.engaged`;
+    const queueEntry = this.eventFactory.constructEvent(this.profile.updateSeqnum(),
+                                                        this.nowInUtcTime(),
+                                                        'event',
+                                                        eventName);
+    const events = [queueEntry];
+
+    if (this.profile.IsQA) {
+      const qaEntry = this.eventFactory.constructQANotificationEngagedEvent(queueEntry, campaignId, deeplink);
+      events.push(qaEntry);
+    }
+
+    this.queueEvents(events);
   }
 
   public currencyGiven (params: ICurrencyParams): void {
@@ -327,24 +322,60 @@ class Swrve {
 
   /** Private methods */
 
+  /** Initialization Methods */
+
+  private async initializeIdentity() {
+    SwrveLogger.infoMsg('Setting up profile');
+    this.profile = new SwrveProfile(this.config.ExternalUserId);
+    if (!this.profile.IsIdentityResolved) {
+      await this.profile.callIdentifyOnExternalUserId(this.config.ExternalUserId, this);
+      if (this.profile.IsIdentityResolved) {
+        SwrveLogger.infoMsg(`Identify Resolved: ${this.profile.UserId} for extUserId: ${this.profile.ExternalUserId}`);
+      }
+    }
+  }
+
+  private initializePersistentData() {
+    if (!this.hasPersistentInstallDate()) {
+      this.sessionStartedAt = Date.now(); /** session startedAt in ms */
+      this.setPersistentInstallDate();
+    }
+    if (!this.hasPersistentDeviceId()) {
+      this.setPersistentDeviceId();
+    }
+  }
+
   /** Private Event Methods */
+  private queueEvents(events: any[]) { // For some reason, StorableType is not accepted here.
+    events.forEach((event) => {
+      this.localStorageClient.storeEventOnQueue(this.getUserID, event);
+    });
+    this.shouldSendEventsImmediately() ? this.eventQueueManager.sendEvents() : noOp();
+  }
+
+  private shouldSendEventsImmediately() {
+    return this.profile.IsQA && !isNil(this.eventQueueManager);
+  }
 
   private eventInternal(eventType?: EventType, params?: INamedEventParams): void {
     /** Event used internally */
     const queueEntry = this.eventFactory.constructEvent(this.profile.updateSeqnum(),
-                                                        this.profile.IsQA,
                                                         this.nowInUtcTime(),
                                                         eventType,
                                                         params.name,
                                                         params.payload);
+    const events = [queueEntry];
+    if (this.profile.IsQA) {
+      const qaEntry = this.eventFactory.constructQAEvent(queueEntry);
+      events.push(qaEntry);
+    }
 
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    this.queueEvents(events);
   }
 
   private genericCampaignEventInternal(params: IGenericCampaignEventParams) {
     const queueEntry = this.eventFactory.constructGenericCampaignEvent(
       this.profile.updateSeqnum(),
-      this.profile.IsQA,
       new Date().getTime(),
       params.campaignType,
       params.campaignId,
@@ -352,64 +383,90 @@ class Swrve {
       params.actionType,
     );
 
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    this.queueEvents([queueEntry]);
   }
 
   private currencyGivenInternal(params: ICurrencyParams) {
     const queueEntry = this.eventFactory.constructCurrencyGiven(this.profile.updateSeqnum(),
-                                                                this.profile.IsQA,
                                                                 this.nowInUtcTime(),
                                                                 params.currency,
                                                                 params.amount,
     );
+    const events = [queueEntry] as StorableEvent[];
 
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    if (this.profile.IsQA) {
+      const qaEntry = this.eventFactory.constructQACurrencyGiven(queueEntry);
+      events.push(qaEntry);
+    }
+
+    this.queueEvents(events);
   }
 
   private sessionStartInternal() {
-    const queueEntry = this.eventFactory.constructEvent(this.profile.updateSeqnum(),
-                                                        this.profile.IsQA,
-                                                        this.nowInUtcTime(),
-                                                        eventTypes.sessionStartEvent,
-    );
+    const queueEntry = this.eventFactory.constructSessionStart(this.profile.updateSeqnum(), this.nowInUtcTime());
+    const events = [queueEntry];
 
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    if (this.profile.IsQA) {
+      events.push(this.eventFactory.constructQASessionStart(queueEntry));
+    }
+
+    this.queueEvents(events);
   }
 
-  private userUpdateInternal(eventType: string, attributes: object): void {
-    /** UserUpdate used internally */
+  /** UserUpdate used internally */
+  private userUpdateInternal(attributes: IUserUpdateClientInfoAttributes): void {
     const queueEntry = this.eventFactory.constructUserUpdate(this.profile.updateSeqnum(),
-                                                             this.profile.IsQA,
                                                              this.nowInUtcTime(),
                                                              attributes);
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    const events = [queueEntry];
+    if (this.profile.IsQA) {
+      events.push(this.eventFactory.constructQAUserUpdate(queueEntry));
+    }
+
+    this.queueEvents(events);
   }
 
   private userUpdateWithDateInternal (type: string, attributes: IUserUpdateWithDateParams): void {
     const seqnum = this.profile.updateSeqnum();
-    const queueEntry = this.eventFactory.constructUserUpdateWithDate(seqnum, this.profile.IsQA, this.nowInUtcTime(), attributes.name, attributes.date);
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    const queueEntry = this.eventFactory.constructUserUpdateWithDate(seqnum, this.nowInUtcTime(), attributes.name, attributes.date);
+    const events = [] as StorableEvent[];
+    events.push(queueEntry);
+    if (this.profile.IsQA) {
+      events.push(this.eventFactory.constructQAUserUpdateWithDate(queueEntry));
+    }
+
+    this.queueEvents(events);
   }
 
   private purchaseInternal (item: string, currency: string, cost: number, quantity: number): void {
     const seqnum = this.profile.updateSeqnum();
-    const queueEntry = this.eventFactory.constructPurchaseEvent(seqnum, this.profile.IsQA, this.nowInUtcTime(), item, currency, cost, quantity);
-    /** we include true here (oddly) to force the queue to flush */
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    const queueEntry = this.eventFactory.constructPurchaseEvent(seqnum, this.nowInUtcTime(), item, currency, cost, quantity);
+    const events = [] as StorableEvent[];
+    events.push(queueEntry);
+    if (this.profile.IsQA) {
+      events.push(this.eventFactory.constructQAPurchaseEvent(queueEntry));
+    }
+
+    this.queueEvents(events);
   }
 
   private sendClientInfo(): void {
     const seqnum = this.profile.updateSeqnum();
     const properties = ClientInfoHelper.getClientInfo();
-    const queueEntry = this.eventFactory.constructDeviceUpdate(seqnum, this.profile.IsQA, this.nowInUtcTime(), properties);
+    const queueEntry = this.eventFactory.constructDeviceUpdate(seqnum, this.nowInUtcTime(), properties);
+    const events = [queueEntry];
 
-    this.localStorageClient.storeEventOnQueue(this.getUserID, queueEntry);
+    if (this.profile.IsQA) {
+      events.push(this.eventFactory.constructQADeviceUpdate(queueEntry));
+    }
+
+    this.queueEvents(events);
   }
 
   private generateSessionToken(): string {
     const time: string = this.sessionStartedAt.toString();
     const md5: Md5 = new Md5();
-    md5.appendStr(this.profile.UserId as string)
+    md5.appendStr(this.profile.UserId)
       .appendStr(time)
       .appendStr(this.config.ApiKey);
     const hash: string = md5.end() as string;
@@ -442,7 +499,7 @@ class Swrve {
 
   private hasPersistentInstallDate(): boolean {
     /* tslint:disable-next-line:triple-equals */
-    return !(this.getPersistentInstallDate() == undefined);
+    return isPresent(this.getPersistentInstallDate());
   }
 
   private setPersistentInstallDate(): void {
@@ -459,7 +516,7 @@ class Swrve {
 
   private hasPersistentDeviceId(): boolean {
     /* tslint:disable-next-line:triple-equals */
-    return !(this.getPersistentDeviceId() == undefined);
+    return isPresent(this.getPersistentDeviceId());
   }
 
   private setPersistentDeviceId(): void {

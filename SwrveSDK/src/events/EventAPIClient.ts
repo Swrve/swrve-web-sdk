@@ -1,5 +1,7 @@
 import { swrveVersion } from '../config/AppConfigParams';
-import { IEventBatchRequestBody, IEventBatchRequestBodyParams } from '../interfaces/IEventBatchRequest';
+import { IEventBatchRequest, IEventBatchRequestBody, IEventBatchRequestBodyParams } from '../interfaces/IEventBatchRequest';
+import { StorableEvent } from '../interfaces/IEvents';
+import { IRESTResponse } from '../interfaces/IRESTClient';
 import RESTClient from '../networking/RESTClient';
 
 class EventAPIClient {
@@ -16,16 +18,16 @@ class EventAPIClient {
     this.userId = userId;
   }
 
-  public async sendEventBatch(params: IEventBatchRequestBodyParams, data: any[]): Promise<any> {
-    const request: any = this.eventBatchRequestParams(params);
+  public async sendEventBatch(params: IEventBatchRequestBodyParams, data: StorableEvent[], onSuccess?: (resp: IRESTResponse) => void, onFailure?: (err: IRESTResponse) => void): Promise<IRESTResponse> {
+    const request: IEventBatchRequest = this.eventBatchRequestParams(params);
     request.body.data = data;
 
-    return await RESTClient.post(request.url, request.body);
+    return await RESTClient.post(request.url, request.body, onSuccess, onFailure);
   }
 
-  public eventBatchRequestParams(params: IEventBatchRequestBodyParams): { url: string; body: object; } {
+  public eventBatchRequestParams(params: IEventBatchRequestBodyParams): IEventBatchRequest {
     const url: string = `${this.baseUrl}${this.eventBatchUriPath}`;
-    const body: object = this.requestBodyPrototype(params);
+    const body: IEventBatchRequestBody = this.requestBodyPrototype(params);
 
     return { url, body };
   }

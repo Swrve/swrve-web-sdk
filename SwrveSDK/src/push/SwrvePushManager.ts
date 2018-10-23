@@ -1,8 +1,7 @@
 import SwrveConfig from '../config/SwrveConfig';
-import Swrve from '../Swrve';
 import SwrveSDK from '../SwrveSDK';
 import { base64UrlToUint8Array } from '../util/Array';
-import { isNil, noOp } from '../util/Nil';
+import { isNil, isPresent, noOp } from '../util/Nil';
 import SwrveLogger from '../util/SwrveLogger';
 
 export const serviceWorkerEventTypes = {
@@ -10,7 +9,6 @@ export const serviceWorkerEventTypes = {
   swrvePushNotificationClosed: 'swrve.push_closed',
   swrvePushReceived: 'swrve.push_receieved',
 };
-const serviceWorkerFile = 'SwrveWorker.js';
 
 class SwrvePushManager  {
 
@@ -32,7 +30,7 @@ class SwrvePushManager  {
   }
 
   public get IsInitialised(): boolean {
-    return this.isInitialised === true;
+    return this.isInitialised;
   }
 
   public get WebPushApiKey(): string {
@@ -51,16 +49,14 @@ class SwrvePushManager  {
     }
 
     this.isInitialised = true;
-
-    if (this.config.AutoPushSubscribe) {
-      this.registerPush();
-    }
+    this.registerPush();
   }
 
   public registerPush(onSuccess?: () => void, onFailure?: (err: Error) => void) {
     this.check();
     const successCallback = isNil(onSuccess) ? noOp : onSuccess;
     const failCallback = isNil(onFailure) ? noOp : onFailure;
+    const serviceWorkerFile = this.config.ServiceWorker;
 
     navigator.serviceWorker.register(serviceWorkerFile).then((serviceWorkerRegistration) => {
       SwrveLogger.infoMsg(`Registering service worker: ${serviceWorkerFile}`);
@@ -69,7 +65,7 @@ class SwrvePushManager  {
       serviceWorkerRegistration.pushManager.getSubscription().then((existingSubscription) => {
         if (isNil(existingSubscription)) {
           SwrveLogger.infoMsg('Attempting to subscribe to push');
-          const keyArray = base64UrlToUint8Array(this.webPushApiKey);
+          const keyArray = base64UrlToUint8Array(this.WebPushApiKey);
           const options = {
             applicationServerKey: keyArray,
             userVisibleOnly: this.config.UserVisibleOnly,
@@ -105,6 +101,10 @@ class SwrvePushManager  {
     this.check();
     const successCallback = isNil(onSuccess) ? noOp : onSuccess;
     const failCallback = isNil(onFailure) ? noOp : onFailure;
+    const failure = (e: Error) => {
+      SwrveLogger.errorMsg(e);
+      failCallback(e);
+    };
     navigator.serviceWorker.ready.then((serviceWorkerRegistration) => {
       serviceWorkerRegistration.pushManager.getSubscription().then((existingSubscription) => {
         if (isNil(existingSubscription)) {
@@ -127,13 +127,11 @@ class SwrvePushManager  {
           successCallback();
         }).catch((e) => {
           SwrveLogger.errorMsg('Error unsubscribing from push');
-          SwrveLogger.errorMsg(e);
-          failCallback(e);
+          failure(e);
         });
       }).catch((e) => {
         SwrveLogger.errorMsg('Error fetching existing subscription');
-        SwrveLogger.errorMsg(e);
-        failCallback(e);
+        failure(e);
       });
     });
   }
@@ -151,10 +149,8 @@ class SwrvePushManager  {
     SwrveLogger.infoMsg('Notification Clicked');
     SwrveLogger.infoMsg(event);
 
-    if (event.data) {
-      if (event.data.body.id) {
-        SwrveSDK.checkInstance().pushNotificationEngagedEvent(event.data.body.id);
-      }
+    if (isPresent(event.data) && isPresent(event.data.body.id)) {
+      SwrveSDK.checkInstance().pushNotificationEngagedEvent(event.data.body.id, event.data.body.deeplink);
     }
 
     return isNil(this.callBackPushClicked) ? null : this.callBackPushClicked(event);

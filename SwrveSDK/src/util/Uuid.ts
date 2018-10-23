@@ -22,7 +22,7 @@ export function parseUuid(text: string): Uuid {
  *  We generate Uint8Array comprised of random bytes. Then we edit the bytes[6] and bytes[8] to have it to standard with Version 4 (Random).
  */
 export function generateUuid(): Uuid {
-  const bytes: Uint8Array = crypto.getRandomValues(new Uint8Array(16)) as Uint8Array;
+  const bytes: Uint8Array = crypto.getRandomValues(new Uint8Array(16));
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   return new Uuid(Array.from(bytes));
