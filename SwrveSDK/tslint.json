@@ -5,6 +5,12 @@
     "tslint-config-airbnb",
     "tslint-sonarts"
   ],
+  "linterOptions": {
+    "exclude": [
+      "node_modules",
+      "package.json"
+    ]
+  },
   "rules": {
     "max-line-length": [true, 280],
     "member-ordering": [

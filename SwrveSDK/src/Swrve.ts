@@ -426,7 +426,7 @@ class Swrve {
     this.queueEvents(events);
   }
 
-  private userUpdateWithDateInternal (type: string, attributes: IUserUpdateWithDateParams): void {
+  private userUpdateWithDateInternal(type: string, attributes: IUserUpdateWithDateParams): void {
     const seqnum = this.profile.updateSeqnum();
     const queueEntry = this.eventFactory.constructUserUpdateWithDate(seqnum, this.nowInUtcTime(), attributes.name, attributes.date);
     const events = [] as StorableEvent[];
@@ -438,7 +438,7 @@ class Swrve {
     this.queueEvents(events);
   }
 
-  private purchaseInternal (item: string, currency: string, cost: number, quantity: number): void {
+  private purchaseInternal(item: string, currency: string, cost: number, quantity: number): void {
     const seqnum = this.profile.updateSeqnum();
     const queueEntry = this.eventFactory.constructPurchaseEvent(seqnum, this.nowInUtcTime(), item, currency, cost, quantity);
     const events = [] as StorableEvent[];

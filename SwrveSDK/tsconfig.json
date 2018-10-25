@@ -11,13 +11,16 @@
       "es2015",
       "webworker"
     ],
-    "module": "ES6",
-    "moduleResolution": "node",
+    "module": "commonjs",
     "outDir": "./dist/types",
+    "resolveJsonModule": true,
     "sourceMap": true,
-    "target": "ES6",
+    "target": "es5",
   },
   "include": [
     "./src"
-  ]
+  ],
+  "exclude": [
+    "node_modules"
+  ] 
 }
