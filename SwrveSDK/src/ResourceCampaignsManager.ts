@@ -93,7 +93,7 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
     this.setAsStopped();
 
     // Do not use setInterval. This is not guaranteed to work
-    this.timeoutProcess = setTimeout(this.processInBackground.bind(this), this.flushConfig.flushFrequency);
+    this.timeoutProcess = window.setTimeout(this.processInBackground.bind(this), this.flushConfig.flushFrequency);
   }
 
   public shutdown(): void {

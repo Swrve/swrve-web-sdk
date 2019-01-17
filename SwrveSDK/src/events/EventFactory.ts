@@ -7,12 +7,18 @@ import {
   ICurrencyGivenDBData,
   IEventDBData,
   IGenericCampaignEventDBData,
+  IIAPEventDBData,
   IPurchaseEventDBData,
   IQAEventLogDetails,
   IQAWrappedEvent,
+  IRewardsParams,
   IUserUpdateClientInfoAttributes,
   IUserUpdateWithDateParams,
 } from '../interfaces/IEvents';
+
+import {
+  appStore,
+} from '../helpers/ClientInfoConstants';
 
 class EventFactory {
   public constructEvent(seqnum: number, time: number, type: string, name?: string, payload?: object): IEventDBData {
@@ -163,6 +169,40 @@ class EventFactory {
         currency: event.currency,
         item: event.item,
         quantity: event.quantity,
+      },
+      seqnum: event.seqnum,
+      type: event.type,
+    };
+
+    return this.constructQAWrappedEvent(logDetails);
+  }
+
+        /** IAP Event */
+  public constructIAPEvent(seqnum: number, time: number, rewards: { [id: string]: IRewardsParams; }, localCurrency: string, cost: number, quantity: number, productId: string): IIAPEventDBData {
+    return {
+      app_store : appStore,
+      cost,
+      local_currency: localCurrency,
+      product_id : productId,
+      quantity,
+      rewards,
+      seqnum,
+      time,
+      type: eventTypes.iapEvent,
+    };
+  }
+
+    /** QA variant of IAP Event */
+  public constructQAIAPEvent(event: IIAPEventDBData): IQAWrappedEvent {
+    const logDetails: IQAEventLogDetails = {
+      client_time: event.time,
+      parameters: {
+        app_store: appStore,
+        cost: event.cost,
+        local_currency: event.local_currency,
+        product_id : event.product_id,
+        quantity: event.quantity,
+        rewards : event.rewards,
       },
       seqnum: event.seqnum,
       type: event.type,

@@ -10,8 +10,10 @@ import {
   firstSessionEventName,
   ICurrencyParams,
   IGenericCampaignEventParams,
+  IIAPParams,
   INamedEventParams,
   IPurchaseParams,
+  IRewardsParams,
   IUserUpdateClientInfoAttributes,
   IUserUpdateWithDateParams,
   StorableEvent,
@@ -157,19 +159,20 @@ class Swrve {
         SwrveLogger.infoMsg('Sending Client Info');
         this.sendClientInfo();
 
+        /** Initialize Push Manager but do not register */
+        SwrveLogger.infoMsg(`Initializing PushManager with WebPushAPIKey: ${this.WebPushAPIKey}`);
+        this.swrvePushManager = new SwrvePushManager(this.config, this.WebPushAPIKey);
+        this.SwrvePushManager.init();
+
         /** Setup push configuration */
         if (!this.config.AutoPushSubscribe) {
           SwrveLogger.infoMsg('SwrvePushManager Will not initialize. Auto subscribe is disabled');
         } else {
-          SwrveLogger.infoMsg(`Initializing PushManager with WebPushAPIKey: ${this.WebPushAPIKey}`);
-          this.swrvePushManager = new SwrvePushManager(this.config, this.WebPushAPIKey);
-          this.SwrvePushManager.init();
+          SwrveLogger.infoMsg('autoPushSubscribe: ON');
+          this.swrvePushManager.registerPush();
         }
 
         window.onbeforeunload = (): void => { Swrve.pageCloseHandler(); };
-        if (this.config.AutoPushSubscribe) {
-          SwrveLogger.infoMsg('autoPushSubscribe: ON');
-        }
 
         /** inform the customer that Swrve has loaded */
         if (isPresent(this.onSwrveLoadedCallback)) {
@@ -307,6 +310,14 @@ class Swrve {
   public currencyGiven (params: ICurrencyParams): void {
     if (params.currency && params.amount) {
       this.currencyGivenInternal({ currency: params.currency, amount: params.amount });
+    }
+  }
+
+  public iapEvent (params: IIAPParams): void {
+    if (params.cost && params.local_currency && params.quantity && params.product_id) {
+      this.iapInternal(params.rewards, params.local_currency, params.cost, params.quantity, params.product_id);
+    } else {
+      SwrveLogger.infoMsg('Missing expected parameter');
     }
   }
 
@@ -450,6 +461,18 @@ class Swrve {
     this.queueEvents(events);
   }
 
+  private iapInternal(rewards: { [id: string]: IRewardsParams; }, localCurrency: string, cost: number, quantity: number, productId: string): void {
+    const seqnum = this.profile.updateSeqnum();
+    const queueEntry = this.eventFactory.constructIAPEvent(seqnum, this.nowInUtcTime(), rewards, localCurrency, cost, quantity, productId);
+    const events = [] as StorableEvent[];
+    events.push(queueEntry);
+    if (this.profile.IsQA) {
+      events.push(this.eventFactory.constructQAIAPEvent(queueEntry));
+    }
+
+    this.queueEvents(events);
+  }
+
   private sendClientInfo(): void {
     const seqnum = this.profile.updateSeqnum();
     const properties = ClientInfoHelper.getClientInfo();
@@ -481,7 +504,8 @@ class Swrve {
       const lastSession: number = this.profile.LastSession;
       const now: number = this.nowInUtcTime();
       const expirationTimeout: number = this.config.NewSessionInterval * 1000; /** convert to ms */
-      if (!lastSession || now - lastSession > expirationTimeout) {
+      if (lastSession && (now - lastSession) > expirationTimeout) {
+        SwrveLogger.infoMsg('session has expired. returning false');
         return false;
       }
       /** the session hasn't expired so keep the last session time as the session start */

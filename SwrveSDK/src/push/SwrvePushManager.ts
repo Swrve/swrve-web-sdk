@@ -49,7 +49,6 @@ class SwrvePushManager  {
     }
 
     this.isInitialised = true;
-    this.registerPush();
   }
 
   public registerPush(onSuccess?: () => void, onFailure?: (err: Error) => void) {

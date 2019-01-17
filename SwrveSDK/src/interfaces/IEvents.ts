@@ -14,10 +14,12 @@ export const eventTypes: {
   qaLogEvent: EventType;
   sessionStartEvent: EventType;
   userUpdateEvent: EventType;
+  iapEvent: EventType;
 } = {
   currencyGiven: 'currency_given',
   deviceUpdateEvent: 'device_update',
   genericCampaignEvent: 'generic_campaign_event',
+  iapEvent: 'iap',
   namedEvent: 'event',
   purchaseEvent: 'purchase',
   qaLogEvent: 'qa_log_event',
@@ -61,6 +63,15 @@ export interface IPurchaseEventDBData extends IStoredEvent  {
   quantity: number;
 }
 
+export interface IIAPEventDBData extends IStoredEvent  {
+  cost: number;
+  local_currency: string;
+  quantity: number;
+  product_id: string;
+  rewards: { [id: string]: IRewardsParams; };
+  app_store: string;
+}
+
 export interface IQAWrappedEvent extends IStoredEvent  {
   log_source: string;
   log_details: IQAEventLogDetails;
@@ -75,7 +86,7 @@ export interface IQAEventLogDetails {
   client_time: number;
 }
 
-export declare type StorableEvent = ICurrencyGivenDBData | IEventDBData | IGenericCampaignEventDBData | IPurchaseEventDBData | IQAWrappedEvent;
+export declare type StorableEvent = ICurrencyGivenDBData | IEventDBData | IGenericCampaignEventDBData | IPurchaseEventDBData | IQAWrappedEvent | IIAPEventDBData;
 
 // Method signatures
 export interface INamedEventParams {
@@ -97,6 +108,15 @@ export interface IPurchaseParams {
   currency: string;
   item: string;
   quantity: number;
+}
+
+export interface IIAPParams {
+  cost: number;
+  local_currency: string;
+  quantity: number;
+  product_id: string;
+  rewards: { [id: string]: IRewardsParams; };
+  app_store: string;
 }
 
 export interface IUserUpdateWithDateParams {
@@ -129,4 +149,9 @@ export interface IUserUpdateClientInfoAttributes {
   'swrve.user_agent'?: string | null;
   'swrve.user_id'?: string | null;
   'swrve.utc_offset_seconds'?: number | null;
+}
+
+export interface IRewardsParams {
+  amount: number;
+  type: string;
 }

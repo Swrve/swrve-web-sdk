@@ -33,7 +33,7 @@ abstract class ClientInfoHelper {
       [SWRVE_DEVICE_ID]: this.getDeviceId(),
       [SWRVE_OS]: osInfo.name,
       [SWRVE_OS_VERSION]: osInfo.version,
-      [SWRVE_SDK_VERSION]: sdkVersion,
+      [SWRVE_SDK_VERSION]: this.getSDKVersion(),
       [SWRVE_LANGUAGE]: this.getBrowserLanguage(),
       [SWRVE_COUNTRY_CODE]: this.getCountryCode(),
       [SWRVE_DEVICE_REGION]: this.getRegion(),
@@ -165,6 +165,10 @@ abstract class ClientInfoHelper {
 
     SwrveLogger.errorMsg('Cannot identify browser');
     return clientBrowser;
+  }
+
+  public static getSDKVersion(): string {
+    return sdkVersion;
   }
 
   private static checkBrowser(): IBrowserInfo {

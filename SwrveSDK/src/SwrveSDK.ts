@@ -2,6 +2,7 @@ import SwrveConfig from './config/SwrveConfig';
 import SwrveValidator from './helpers/SwrveValidator';
 import {
   ICurrencyParams,
+  IIAPParams,
   INamedEventParams,
   IPurchaseParams,
   IUserUpdateClientInfoAttributes,
@@ -70,6 +71,10 @@ class SwrveSDK {
 
   public static purchaseEvent (params: IPurchaseParams): void {
     SwrveSDK.checkInstance().purchaseEvent(params);
+  }
+
+  public static iapEvent (params: IIAPParams): void {
+    SwrveSDK.checkInstance().iapEvent(params);
   }
 
   public static currencyGiven (params: ICurrencyParams): void {
