@@ -6,6 +6,7 @@ import { IFlushConfig } from '../interfaces/ISwrveConfig';
 import LocalStorageClient from '../storage/LocalStorageClient';
 import Swrve from '../Swrve';
 import SwrveLogger from '../util/SwrveLogger';
+import { nowInUtcTime } from '../util/Date';
 
 class EventQueueManager implements IBackgroundProcessor {
 
@@ -124,12 +125,12 @@ class EventQueueManager implements IBackgroundProcessor {
 
   public setAsStarted(): void {
     this.isProcessing = true;
-    this.lastProcessingStart = Date.now();
+    this.lastProcessingStart = nowInUtcTime();
   }
 
   public setAsStopped(): void {
     this.isProcessing = false;
-    this.lastProcessingStop = Date.now();
+    this.lastProcessingStop = nowInUtcTime();
   }
 }
 

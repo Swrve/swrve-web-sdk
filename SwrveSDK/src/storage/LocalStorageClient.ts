@@ -1,6 +1,7 @@
 import { StorableEvent } from '../interfaces/IEvents';
 import { ExternalUserNamespaceKeys, GlobalNamespaceKeys, UserNamespaceKeys } from './LocalStorageSchema';
 import StorageManager from './StorageManager';
+import { nowInUtcTime } from '../util/Date';
 
 class LocalStorageClient {
   private storageManager: StorageManager;
@@ -140,7 +141,7 @@ class LocalStorageClient {
   private qaStatus(userID) { return `swrve:${userID}:${UserNamespaceKeys.QAStatus}`; }
   private eventsQueueKey(userID) { return `${this.eventsQueueKeyPrefix(userID)}:${this.eventsQueueKeyStamp()}`; }
   private eventsQueueKeyPrefix(userID) { return `swrve:${userID}:${UserNamespaceKeys.Events}`; }
-  private eventsQueueKeyStamp() { return `${Date.now()}-${window.performance.now()}-${Math.random()}`; }
+  private eventsQueueKeyStamp() { return `${nowInUtcTime()}-${window.performance.now()}-${Math.random()}`; }
 }
 
 export default LocalStorageClient;

@@ -26,7 +26,7 @@ class SwrveConfig {
     this.apiKey = config.apiKey;
     this.stack = config.stack || 'us';
     this.language = config.language || 'English';
-    this.newSessionInterval = config.newSessionInterval || 30; /** seconds */
+    this.newSessionInterval = config.newSessionInterval || 1800; /** 30 minutes in seconds */
     this.resolveApiUrl(config);
     this.resolveContentUrl(config);
     this.resolveIdentifyUrl(config);
@@ -89,7 +89,7 @@ class SwrveConfig {
   }
 
   private resolveApiUrl(config: ISwrveConfig): void {
-    const stackResult = config.stack ===  'eu' ? 'eu-api' : 'api';
+    const stackResult = config.stack === 'eu' ? 'eu-api' : 'api';
     this.apiURL = config.apiURL || `https://${config.appId}.${stackResult}.swrve.com`;
   }
 

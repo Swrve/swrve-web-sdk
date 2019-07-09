@@ -6,6 +6,7 @@ import Swrve from '../Swrve';
 import { isNil } from '../util/Nil';
 import SwrveLogger from '../util/SwrveLogger';
 import { generateUuid } from '../util/Uuid';
+import { nowInUtcTime } from '../util/Date';
 
 /**
  * SwrveProfile
@@ -96,7 +97,7 @@ class SwrveProfile {
         /** construct ISwrveProfile to save it */
         const newProfile: ISwrveProfile = {
           extUserId: externalUserId,
-          firstSession: Date.now(),
+          firstSession: nowInUtcTime(),
           qa: false,
           seqnum: 0,
           userId: responseJSON.swrve_id,
@@ -155,7 +156,7 @@ class SwrveProfile {
 
   public saveBeforeSessionEnd(): void {
     /** set the lastSession time just before we finish up */
-    this.lastSession = Date.now();
+    this.lastSession = nowInUtcTime();
 
     /** package into a model needed */
     const toStore: ISwrveProfile = {

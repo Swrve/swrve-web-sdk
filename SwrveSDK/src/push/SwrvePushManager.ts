@@ -52,6 +52,10 @@ class SwrvePushManager  {
   }
 
   public registerPush(onSuccess?: () => void, onFailure?: (err: Error) => void) {
+    if (!this.isPushSupported()) {
+      // ** Unsupported browser: exiting quietly */
+      return;
+    }
     this.check();
     const successCallback = isNil(onSuccess) ? noOp : onSuccess;
     const failCallback = isNil(onFailure) ? noOp : onFailure;
@@ -97,6 +101,10 @@ class SwrvePushManager  {
   }
 
   public unregisterPush(onSuccess: () => void, onFailure: (err: Error) => void) {
+    if (!this.isPushSupported()) {
+      // ** Unsupported browser: exiting quietly */
+      return;
+    }
     this.check();
     const successCallback = isNil(onSuccess) ? noOp : onSuccess;
     const failCallback = isNil(onFailure) ? noOp : onFailure;

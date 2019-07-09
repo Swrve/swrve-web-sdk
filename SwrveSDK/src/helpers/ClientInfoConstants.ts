@@ -78,5 +78,9 @@ export const osRegex: Array<{ name: string; regex: RegExp }> = [
   { name: 'UNIX', regex: /UNIX/ },
   { name: 'BeOS', regex: /BeOS/ },
   { name: 'OS/2', regex: /OS\/2/ },
-  { name: 'Search Bot', regex: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ },
+  { name: 'Search Bot', regex: /(nuhk|Googlebot|Yammybot|python|ruby|curl|bingbot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ },
 ];
+
+/** lists of items we do not officially support */
+export const browserBlackList: string[] = ['msIE'];
+export const osBlackList: string[] = ['Search Bot'];

@@ -28,12 +28,14 @@ import { defaultFlushFrequency, defaultFlushRefreshDelay } from './config/AppCon
 import EventQueueManager from './events/EventQueueManager';
 
 import ClientInfoHelper from './helpers/ClientInfoHelper';
+import SupportHelper from './helpers/SupportHelper';
 import SwrveProfile from './profile/SwrveProfile';
 import SwrvePushManager from './push/SwrvePushManager';
 
 import LocalStorageClient from './storage/LocalStorageClient';
 import { OnSwrveLoadedCallback } from './SwrveSDK';
 import { generateUuid } from './util/Uuid';
+import { nowInUtcTime } from './util/Date';
 
 class Swrve {
   private static instance: Swrve;
@@ -121,6 +123,10 @@ class Swrve {
 
   /** Public static methods */
   public async init(): Promise<Swrve | void> {
+    if (!SupportHelper.isTrackingSupported()) {
+      throw Error('The configuration shown in the User Agent is not officially supported');
+    }
+
     SwrveLogger.infoMsg('Starting New SwrveSDK instance');
     this.initializePersistentData();
 
@@ -134,7 +140,7 @@ class Swrve {
         /** check if we need to start a new session or restore an old one */
         if (!this.hasSessionRestored()) {
           // Send a session start event
-          this.sessionStartedAt = Date.now(); /** session startedAt in ms */
+          this.sessionStartedAt = nowInUtcTime(); /** session startedAt in ms */
           this.sessionStart();
         }
 
@@ -172,7 +178,8 @@ class Swrve {
           this.swrvePushManager.registerPush();
         }
 
-        window.onbeforeunload = (): void => { Swrve.pageCloseHandler(); };
+        window.onbeforeunload = (): void => { Swrve.pageStateHandler(); };
+        window.onblur = (): void => { Swrve.pageStateHandler(); };
 
         /** inform the customer that Swrve has loaded */
         if (isPresent(this.onSwrveLoadedCallback)) {
@@ -197,7 +204,7 @@ class Swrve {
       }
 
       /** Save everything to profile manager at the end */
-      this.pageCloseHandler();
+      this.pageStateHandler();
 
       /** Destroy the prototype */
       Object.setPrototypeOf(this.instance, null);
@@ -294,7 +301,7 @@ class Swrve {
   public pushNotificationEngagedEvent(campaignId: number, deeplink?: string): void {
     const eventName = `Swrve.Messages.Push-${campaignId}.engaged`;
     const queueEntry = this.eventFactory.constructEvent(this.profile.updateSeqnum(),
-                                                        this.nowInUtcTime(),
+                                                        nowInUtcTime(),
                                                         'event',
                                                         eventName);
     const events = [queueEntry];
@@ -348,7 +355,7 @@ class Swrve {
 
   private initializePersistentData() {
     if (!this.hasPersistentInstallDate()) {
-      this.sessionStartedAt = Date.now(); /** session startedAt in ms */
+      this.sessionStartedAt = nowInUtcTime(); /** session startedAt in ms */
       this.setPersistentInstallDate();
     }
     if (!this.hasPersistentDeviceId()) {
@@ -371,7 +378,7 @@ class Swrve {
   private eventInternal(eventType?: EventType, params?: INamedEventParams): void {
     /** Event used internally */
     const queueEntry = this.eventFactory.constructEvent(this.profile.updateSeqnum(),
-                                                        this.nowInUtcTime(),
+                                                        nowInUtcTime(),
                                                         eventType,
                                                         params.name,
                                                         params.payload);
@@ -399,7 +406,7 @@ class Swrve {
 
   private currencyGivenInternal(params: ICurrencyParams) {
     const queueEntry = this.eventFactory.constructCurrencyGiven(this.profile.updateSeqnum(),
-                                                                this.nowInUtcTime(),
+                                                                nowInUtcTime(),
                                                                 params.currency,
                                                                 params.amount,
     );
@@ -414,7 +421,7 @@ class Swrve {
   }
 
   private sessionStartInternal() {
-    const queueEntry = this.eventFactory.constructSessionStart(this.profile.updateSeqnum(), this.nowInUtcTime());
+    const queueEntry = this.eventFactory.constructSessionStart(this.profile.updateSeqnum(), nowInUtcTime());
     const events = [queueEntry];
 
     if (this.profile.IsQA) {
@@ -427,7 +434,7 @@ class Swrve {
   /** UserUpdate used internally */
   private userUpdateInternal(attributes: IUserUpdateClientInfoAttributes): void {
     const queueEntry = this.eventFactory.constructUserUpdate(this.profile.updateSeqnum(),
-                                                             this.nowInUtcTime(),
+                                                             nowInUtcTime(),
                                                              attributes);
     const events = [queueEntry];
     if (this.profile.IsQA) {
@@ -439,7 +446,7 @@ class Swrve {
 
   private userUpdateWithDateInternal(type: string, attributes: IUserUpdateWithDateParams): void {
     const seqnum = this.profile.updateSeqnum();
-    const queueEntry = this.eventFactory.constructUserUpdateWithDate(seqnum, this.nowInUtcTime(), attributes.name, attributes.date);
+    const queueEntry = this.eventFactory.constructUserUpdateWithDate(seqnum, nowInUtcTime(), attributes.name, attributes.date);
     const events = [] as StorableEvent[];
     events.push(queueEntry);
     if (this.profile.IsQA) {
@@ -451,7 +458,7 @@ class Swrve {
 
   private purchaseInternal(item: string, currency: string, cost: number, quantity: number): void {
     const seqnum = this.profile.updateSeqnum();
-    const queueEntry = this.eventFactory.constructPurchaseEvent(seqnum, this.nowInUtcTime(), item, currency, cost, quantity);
+    const queueEntry = this.eventFactory.constructPurchaseEvent(seqnum, nowInUtcTime(), item, currency, cost, quantity);
     const events = [] as StorableEvent[];
     events.push(queueEntry);
     if (this.profile.IsQA) {
@@ -463,7 +470,7 @@ class Swrve {
 
   private iapInternal(rewards: { [id: string]: IRewardsParams; }, localCurrency: string, cost: number, quantity: number, productId: string): void {
     const seqnum = this.profile.updateSeqnum();
-    const queueEntry = this.eventFactory.constructIAPEvent(seqnum, this.nowInUtcTime(), rewards, localCurrency, cost, quantity, productId);
+    const queueEntry = this.eventFactory.constructIAPEvent(seqnum, nowInUtcTime(), rewards, localCurrency, cost, quantity, productId);
     const events = [] as StorableEvent[];
     events.push(queueEntry);
     if (this.profile.IsQA) {
@@ -476,7 +483,7 @@ class Swrve {
   private sendClientInfo(): void {
     const seqnum = this.profile.updateSeqnum();
     const properties = ClientInfoHelper.getClientInfo();
-    const queueEntry = this.eventFactory.constructDeviceUpdate(seqnum, this.nowInUtcTime(), properties);
+    const queueEntry = this.eventFactory.constructDeviceUpdate(seqnum, nowInUtcTime(), properties);
     const events = [queueEntry];
 
     if (this.profile.IsQA) {
@@ -501,10 +508,14 @@ class Swrve {
     if (this.profile.LastSession != null) {
       SwrveLogger.infoMsg('LastSession');
       SwrveLogger.infoMsg(this.profile.LastSession);
-      const lastSession: number = this.profile.LastSession;
-      const now: number = this.nowInUtcTime();
+      const lastSession: number = Number(this.profile.LastSession);
+      SwrveLogger.infoMsg(`lastSession: ${lastSession}`);
+      const now: number = Number(nowInUtcTime());
+      SwrveLogger.infoMsg(`now: ${now}`);
       const expirationTimeout: number = this.config.NewSessionInterval * 1000; /** convert to ms */
-      if (lastSession && (now - lastSession) > expirationTimeout) {
+      const diffTime: number = now - lastSession
+      SwrveLogger.infoMsg(`Diff now - lastSession: ${diffTime}`);
+      if (lastSession && diffTime > expirationTimeout) {
         SwrveLogger.infoMsg('session has expired. returning false');
         return false;
       }
@@ -549,13 +560,9 @@ class Swrve {
     this.localStorageClient.storeDeviceID(uniqueDeviceId.toString());
   }
 
-  private nowInUtcTime() {
-    return DateHelper.dateToUTCDate(new Date()).getTime();
-  }
-
   // Browser/DOM Lifecycle
-  private static pageCloseHandler(): void {
-    /** Store all data before page close */
+  private static pageStateHandler(): void {
+    /** Store all data before page close or focus out */
     if (this.instance !== null) {
       this.instance.profile.saveBeforeSessionEnd();
     }

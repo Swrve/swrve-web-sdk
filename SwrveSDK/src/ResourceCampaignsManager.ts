@@ -12,6 +12,7 @@ import LocalStorageClient from './storage/LocalStorageClient';
 import Swrve from './Swrve';
 import { isPresent } from './util/Nil';
 import SwrveLogger from './util/SwrveLogger';
+import { nowInUtcTime } from './util/Date';
 
 class ResourceCampaignsManager implements IBackgroundProcessor {
   public timeoutProcess: number;
@@ -103,12 +104,12 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
 
   public setAsStarted(): void {
     this.isProcessing = true;
-    this.lastProcessingStart = Date.now();
+    this.lastProcessingStart = nowInUtcTime();
   }
 
   public setAsStopped(): void {
     this.isProcessing = false;
-    this.lastProcessingStop = Date.now();
+    this.lastProcessingStop = nowInUtcTime();
   }
 
   public resourceAndCampaignRequestUrl(session: Swrve): string {
