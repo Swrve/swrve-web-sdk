@@ -1,57 +1,55 @@
 {
-  "name": "@swrve/web-sdk",
-  "version": "1.3.1",
-  "author": "Swrve Inc.",
-  "license": "Apache-2.0",
-  "keywords": [
-    "swrve",
-    "sdk",
-    "web",
-    "browser",
-    "js",
-    "chrome",
-    "firefox",
-    "safari",
-    "engagement",
-    "marketing",
-    "platform"
-  ],
-  "homepage": "https://github.com/Swrve/swrve-web-sdk#readme",
-  "bugs": {
-    "url": "https://github.com/Swrve/swrve-web-sdk/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:Swrve/swrve-web-sdk.git"
-  },
-  "files": [
-    "dist/**/*"
-  ],
-  "browser": "dist/SwrveSDK.js",
-  "scripts": {
-    "bundle": "yarn run bundle:prod",
-    "bundle:dev": "webpack --config webpack.dev.js --watch",
-    "bundle:prod": "webpack --config webpack.prod.js",
-    "bundle:release": "yarn run bundle:prod",
-    "stats": "webpack --config webpack.prod.js --profile --json > stats.json && webpack-bundle-analyzer stats.json --mode static --no-open",
-    "clean": "yarn cache clean && rm -rf ./dist",
-    "lint": "tslint --project tsconfig.json",
-    "prepublish": "yarn bundle:release"
-  },
-  "devDependencies": {
-    "clean-webpack-plugin": "1.0.0",
-    "ts-loader": "5.3.3",
-    "ts-md5": "1.2.4",
-    "tslint": "5.12.1",
-    "tslint-config-airbnb": "5.11.1",
-    "tslint-loader": "3.5.4",
-    "tslint-sonarts": "1.8.0",
-    "typedoc": "0.14.1",
-    "typedoc-webpack-plugin": "1.1.4",
-    "typescript": "3.2.2",
-    "webpack": "4.28.4",
-    "webpack-bundle-analyzer": "3.0.3",
-    "webpack-cli": "3.2.1",
-    "webpack-merge": "4.2.1"
-  }
+	"name": "@swrve/web-sdk",
+	"version": "1.3.2",
+	"author": "Swrve Inc.",
+	"license": "Apache-2.0",
+	"keywords": [
+		"swrve",
+		"sdk",
+		"web",
+		"browser",
+		"js",
+		"chrome",
+		"firefox",
+		"safari",
+		"engagement",
+		"marketing",
+		"platform"
+	],
+	"homepage": "https://github.com/Swrve/swrve-web-sdk#readme",
+	"bugs": {
+		"url": "https://github.com/Swrve/swrve-web-sdk/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:Swrve/swrve-web-sdk.git"
+	},
+	"files": [ "dist/**/*" ],
+	"browser": "dist/SwrveSDK.js",
+	"scripts": {
+		"bundle": "yarn run bundle:prod",
+		"bundle:dev": "webpack --config webpack.dev.js --watch",
+		"bundle:prod": "webpack --config webpack.prod.js",
+		"bundle:release": "yarn run bundle:prod",
+		"stats": "webpack --config webpack.prod.js --profile --json > stats.json && webpack-bundle-analyzer stats.json --mode static --no-open",
+		"clean": "yarn cache clean && rm -rf ./dist",
+		"lint": "tslint --project tsconfig.json",
+		"prepublish": "yarn bundle:release"
+	},
+	"devDependencies": {
+		"clean-webpack-plugin": "1.0.0",
+		"ts-loader": "5.3.3",
+		"ts-md5": "1.2.4",
+		"tslint": "5.12.1",
+		"tslint-config-airbnb": "5.11.1",
+		"tslint-loader": "3.5.4",
+		"tslint-sonarts": "1.8.0",
+		"typedoc": "0.14.1",
+		"typedoc-webpack-plugin": "1.1.4",
+		"typescript": "3.2.2",
+		"webpack": "4.28.4",
+		"webpack-bundle-analyzer": "3.0.3",
+		"webpack-cli": "3.2.1",
+		"webpack-merge": "4.2.1"
+	}
 }
