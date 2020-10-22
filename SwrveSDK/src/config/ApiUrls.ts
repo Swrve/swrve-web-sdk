@@ -1,5 +1,5 @@
 /** Resources Campaign */
-export const resourcesCampaignURL: string = 'api/1/user_resources_and_campaigns';
+export const resourcesCampaignURL: string = 'api/1/user_content';
 export const resourcesCampaignSpecialParams: {
   app_store: string;
   orientation: string;

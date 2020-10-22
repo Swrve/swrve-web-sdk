@@ -2,7 +2,6 @@
 export declare type EventType = 'session_start' | 'generic_campaign_event' | 'event' | 'user' | 'purchase' | 'currency_given' | 'iap' | 'device_update' | 'qa_log_event';
 export declare type CampaignType = 'push';
 export declare type ActionType = 'impression' | 'engaged' | 'button_click' | 'influenced';
-export declare type LogType = 'event' | 'resources-downloaded' | 'campaigns-downloaded' | 'push-engaged' | 'push-received';
 
 /** Hardcode: Events types. */
 export const eventTypes: {

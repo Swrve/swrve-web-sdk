@@ -10,9 +10,9 @@ import { IRESTResponse } from './interfaces/IRESTClient';
 import RESTClient from './networking/RESTClient';
 import LocalStorageClient from './storage/LocalStorageClient';
 import Swrve from './Swrve';
+import { nowInUtcTime } from './util/Date';
 import { isPresent } from './util/Nil';
 import SwrveLogger from './util/SwrveLogger';
-import { nowInUtcTime } from './util/Date';
 
 class ResourceCampaignsManager implements IBackgroundProcessor {
   public timeoutProcess: number;
@@ -119,11 +119,12 @@ class ResourceCampaignsManager implements IBackgroundProcessor {
       app_version: session.Config.AppVersion || swrveVersion.toString(),
       device_height: ClientInfoHelper.getScreenResolution().height,
       device_name: ClientInfoHelper.getDeviceName(),
+      device_type: ClientInfoHelper.getDeviceType(),
       device_width: ClientInfoHelper.getScreenResolution().width,
       joined: session.Profile.FirstSession.toString(),
       language: ClientInfoHelper.getBrowserLanguage(),
       orientation: resourcesCampaignSpecialParams.orientation,
-      os: ClientInfoHelper.getOS().name,
+      os: 'web',
       os_version: ClientInfoHelper.getOS().version,
       user: session.Profile.UserId,
       version: resourcesCampaignSpecialParams.version,

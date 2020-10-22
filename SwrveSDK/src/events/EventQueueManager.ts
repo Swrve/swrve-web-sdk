@@ -5,8 +5,8 @@ import { IRESTResponse } from '../interfaces/IRESTClient';
 import { IFlushConfig } from '../interfaces/ISwrveConfig';
 import LocalStorageClient from '../storage/LocalStorageClient';
 import Swrve from '../Swrve';
-import SwrveLogger from '../util/SwrveLogger';
 import { nowInUtcTime } from '../util/Date';
+import SwrveLogger from '../util/SwrveLogger';
 
 class EventQueueManager implements IBackgroundProcessor {
 

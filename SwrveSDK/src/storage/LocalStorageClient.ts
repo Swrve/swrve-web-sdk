@@ -1,7 +1,7 @@
 import { StorableEvent } from '../interfaces/IEvents';
+import { nowInUtcTime } from '../util/Date';
 import { ExternalUserNamespaceKeys, GlobalNamespaceKeys, UserNamespaceKeys } from './LocalStorageSchema';
 import StorageManager from './StorageManager';
-import { nowInUtcTime } from '../util/Date';
 
 class LocalStorageClient {
   private storageManager: StorageManager;

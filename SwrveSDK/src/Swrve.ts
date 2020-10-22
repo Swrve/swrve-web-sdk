@@ -34,8 +34,8 @@ import SwrvePushManager from './push/SwrvePushManager';
 
 import LocalStorageClient from './storage/LocalStorageClient';
 import { OnSwrveLoadedCallback } from './SwrveSDK';
-import { generateUuid } from './util/Uuid';
 import { nowInUtcTime } from './util/Date';
+import { generateUuid } from './util/Uuid';
 
 class Swrve {
   private static instance: Swrve;
@@ -305,12 +305,6 @@ class Swrve {
                                                         'event',
                                                         eventName);
     const events = [queueEntry];
-
-    if (this.profile.IsQA) {
-      const qaEntry = this.eventFactory.constructQANotificationEngagedEvent(queueEntry, campaignId, deeplink);
-      events.push(qaEntry);
-    }
-
     this.queueEvents(events);
   }
 
@@ -513,7 +507,7 @@ class Swrve {
       const now: number = Number(nowInUtcTime());
       SwrveLogger.infoMsg(`now: ${now}`);
       const expirationTimeout: number = this.config.NewSessionInterval * 1000; /** convert to ms */
-      const diffTime: number = now - lastSession
+      const diffTime: number = now - lastSession;
       SwrveLogger.infoMsg(`Diff now - lastSession: ${diffTime}`);
       if (lastSession && diffTime > expirationTimeout) {
         SwrveLogger.infoMsg('session has expired. returning false');

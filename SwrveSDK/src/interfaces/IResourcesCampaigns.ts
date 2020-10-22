@@ -6,6 +6,7 @@ export interface IResourcesCampaignsQueryParams {
   app_version: string;
   device_name: string;
   device_height: string;
+  device_type: string;
   device_width: string;
   etag?: string;
   joined: string;

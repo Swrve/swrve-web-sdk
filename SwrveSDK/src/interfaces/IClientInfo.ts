@@ -62,12 +62,14 @@ export interface IBrowsersRegex {
   webkit: RegExp;
   appleWebkit: RegExp;
   chrome: RegExp;
+  chromium: RegExp;
   mozilla: RegExp;
   firefox: RegExp;
   msIE: RegExp;
   edge: RegExp;
   trident: RegExp;
   safari: RegExp;
+  seamonkey: RegExp;
   opera: RegExp;
 }
 

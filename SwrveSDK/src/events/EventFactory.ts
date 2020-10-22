@@ -238,29 +238,6 @@ class EventFactory {
   }
 
   /** QA only events */
-  public constructQANotificationEngagedEvent(event: IEventDBData, campaignId: number, deeplink: string): IQAWrappedEvent {
-    const logDetails: IQAEventLogDetails = {
-      client_time: event.time,
-      parameters: {
-        campaign_id: campaignId,
-        payload: {
-          deeplink,
-        },
-      },
-      seqnum: event.seqnum,
-      type: event.type,
-    };
-
-    return {
-      log_details: logDetails,
-      log_source: 'sdk',
-      log_type: 'push-engaged',
-      seqnum: logDetails.seqnum,
-      time: logDetails.client_time,
-      type: 'qa_log_event',
-    };
-  }
-
   public constructQAWrappedEvent(logDetails: IQAEventLogDetails): IQAWrappedEvent {
     return {
       log_details: logDetails,

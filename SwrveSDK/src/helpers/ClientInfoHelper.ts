@@ -29,9 +29,13 @@ abstract class ClientInfoHelper {
   public static getClientInfo(): IDictionary<string | number> {
     const osInfo: IClientOS = this.getOS();
     const browserInfo: IBrowser = this.getBrowserInfo();
+
+    /** Debugging with error message, DELETE ME */
+    SwrveLogger.errorMsg(browserInfo.name);
+
     return {
       [SWRVE_DEVICE_ID]: this.getDeviceId(),
-      [SWRVE_OS]: osInfo.name,
+      [SWRVE_OS]: 'web',
       [SWRVE_OS_VERSION]: osInfo.version,
       [SWRVE_SDK_VERSION]: this.getSDKVersion(),
       [SWRVE_LANGUAGE]: this.getBrowserLanguage(),
@@ -126,41 +130,28 @@ abstract class ClientInfoHelper {
     return currentInstance ? currentInstance.DeviceId.toString() : null;
   }
 
+  /** Device Type */
+  public static getDeviceType(): string {
+    const ua = navigator.userAgent.toLowerCase();
+    if (/android|webos|iphone|ipad|ipod|ios|blackberry|iemobile|opera mini|mobi/i.test(ua)) {
+      return 'mobile';
+    }
+    return 'desktop';
+  }
+
   /** Browser Information */
   public static getBrowserInfo(): IBrowser {
-    const safariVersionRegex = new RegExp('version\/(([0-9])+(\.([0-9])+)+)');
-    const defaultVersionRegex = new RegExp('rv:(([0-9])+(.([0-9])+)+)');
     const clientBrowser: IBrowser = { name: 'Unknown', version: 'N/A' };
     const userAgent: string = navigator.userAgent.toLowerCase();
     const browsersInfo: IBrowserInfo = this.checkBrowser();
 
-    let match: RegExpMatchArray | null;
-
     for (const key in browsersInfo) {
-      if (isNil(browsersInfo[key])) {
-        continue;
-      }
 
-      clientBrowser.name = key;
-
-      /** Safari Special */
-      if (key === 'safari') {
-        match = userAgent.match(safariVersionRegex);
-        clientBrowser.version = match ? match[1] : 'N/A';
+      if (browsersInfo[key]) {
+        clientBrowser.name = key;
+        clientBrowser.version = ClientInfoHelper.extractBrowserVersion(key, userAgent);
         return clientBrowser;
       }
-
-      /** Microsoft Special */
-      match = userAgent.match(new RegExp(`(${(key === 'msIE' ? 'msIE|edge' : key)})( |\/)(([0-9])+(.([0-9])+)+)`));
-      if (match) {
-        clientBrowser.version = match[3] || 'N/A';
-        return clientBrowser;
-      }
-
-      /** Fallback Default */
-      match = userAgent.match(defaultVersionRegex);
-      clientBrowser.version = match ? match[1] : 'N/A';
-      return clientBrowser;
     }
 
     SwrveLogger.errorMsg('Cannot identify browser');
@@ -171,15 +162,38 @@ abstract class ClientInfoHelper {
     return sdkVersion;
   }
 
+  private static extractBrowserVersion(key: string, userAgent: string): string {
+    const safariVersionRegex = new RegExp('version\/(([0-9])+(\.([0-9])+)+)');
+    const defaultVersionRegex = new RegExp('rv:(([0-9])+(.([0-9])+)+)');
+    let match: RegExpMatchArray | null;
+
+    /** Safari Special */
+    if (key === 'safari') {
+      match = userAgent.match(safariVersionRegex);
+      return match ? match[1] : 'N/A';
+    }
+
+    /** Microsoft Special */
+    match = userAgent.match(new RegExp(`(${(key === 'msIE' ? 'msIE|edge' : key)})( |\/)(([0-9])+(.([0-9])+)+)`));
+    if (match) {
+      return match[3] || 'N/A';
+    }
+
+    /** Fallback Default */
+    match = userAgent.match(defaultVersionRegex);
+    return match ? match[1] : 'N/A';
+  }
+
   private static checkBrowser(): IBrowserInfo {
-    const userAgent: string = navigator.userAgent.toLowerCase();
+    const uAgent: string = navigator.userAgent.toLowerCase();
     return {
-      chrome: browsersRegex.webkit.test(userAgent) && browsersRegex.chrome.test(userAgent) && !browsersRegex.edge.test(userAgent),
-      firefox: browsersRegex.mozilla.test(userAgent) && browsersRegex.firefox.test(userAgent),
-      msIE: browsersRegex.msIE.test(userAgent) || browsersRegex.trident.test(userAgent) || browsersRegex.edge.test(userAgent),
-      opera: browsersRegex.mozilla.test(userAgent) && browsersRegex.appleWebkit.test(userAgent) && browsersRegex.chrome.test(userAgent) &&
-        browsersRegex.safari.test(userAgent) && browsersRegex.opera.test(userAgent),
-      safari: browsersRegex.safari.test(userAgent) && browsersRegex.appleWebkit.test(userAgent) && !browsersRegex.chrome.test(userAgent),
+      chrome: browsersRegex.webkit.test(uAgent) && browsersRegex.chrome.test(uAgent) && !browsersRegex.edge.test(uAgent) &&
+        !browsersRegex.chromium.test(uAgent),
+      firefox: browsersRegex.mozilla.test(uAgent) && browsersRegex.firefox.test(uAgent) && !browsersRegex.seamonkey.test(uAgent),
+      msIE: browsersRegex.msIE.test(uAgent) || browsersRegex.trident.test(uAgent) || browsersRegex.edge.test(uAgent),
+      opera: browsersRegex.mozilla.test(uAgent) && browsersRegex.appleWebkit.test(uAgent) && browsersRegex.chrome.test(uAgent) &&
+        browsersRegex.safari.test(uAgent) && browsersRegex.opera.test(uAgent),
+      safari: browsersRegex.safari.test(uAgent) && browsersRegex.appleWebkit.test(uAgent) && !browsersRegex.chrome.test(uAgent),
     };
   }
 }

@@ -3,10 +3,10 @@ import { ISwrveProfile } from '../interfaces/ISwrveProfile';
 import RESTClient from '../networking/RESTClient';
 import LocalStorageClient from '../storage/LocalStorageClient';
 import Swrve from '../Swrve';
+import { nowInUtcTime } from '../util/Date';
 import { isNil } from '../util/Nil';
 import SwrveLogger from '../util/SwrveLogger';
 import { generateUuid } from '../util/Uuid';
-import { nowInUtcTime } from '../util/Date';
 
 /**
  * SwrveProfile

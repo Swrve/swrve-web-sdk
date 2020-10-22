@@ -35,21 +35,17 @@ export const browserList: string[] = ['chrome', 'opera', 'safari', 'firefox', 'm
 export const browsersRegex: IBrowsersRegex = {
   appleWebkit: /applewebkit/,
   chrome: /chrome/,
+  chromium: /chromium/,
   edge: /edge/,
   firefox: /firefox/,
   mozilla: /mozilla/,
   msIE: /msie/,
   opera: /opr/,
   safari: /safari/,
+  seamonkey: /seamonkey/,
   trident: /trident/,
   webkit: /webkit/,
 };
-
-/** OS */
-export const osList: string[] = ['Windows 10', 'Windows 8.1', 'Windows 8', 'Windows 7', 'Windows Vista', 'Windows Server 2003',
-  'Windows XP', 'Windows 2000', 'Windows ME', 'Windows 98', 'Windows 95', 'Windows NT 4.0',
-  'Windows CE', 'Windows 3.11', 'Android', 'Open BSD', 'Sun OS', 'Linux', 'iOS', 'Mac OS X',
-  'Mac OS', 'QNX', 'UNIX', 'BeOS', 'OS/2', 'Search Bot', 'Unknown'];
 
 // tslint:disable-next-line:prefer-array-literal
 export const osRegex: Array<{ name: string; regex: RegExp }> = [
