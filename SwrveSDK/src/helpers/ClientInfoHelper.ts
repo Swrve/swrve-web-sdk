@@ -30,9 +30,6 @@ abstract class ClientInfoHelper {
     const osInfo: IClientOS = this.getOS();
     const browserInfo: IBrowser = this.getBrowserInfo();
 
-    /** Debugging with error message, DELETE ME */
-    SwrveLogger.errorMsg(browserInfo.name);
-
     return {
       [SWRVE_DEVICE_ID]: this.getDeviceId(),
       [SWRVE_OS]: 'web',
