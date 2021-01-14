@@ -137,23 +137,32 @@ class Swrve {
       if (this.profile.IsIdentityResolved) {
         SwrveLogger.infoMsg(`Profile Resolved: ${this.profile.UserId} for extUserId: ${this.profile.ExternalUserId}`);
 
-        /** check if we need to start a new session or restore an old one */
-        if (!this.hasSessionRestored()) {
-          // Send a session start event
-          this.sessionStartedAt = nowInUtcTime(); /** session startedAt in ms */
-          this.sessionStart();
+        /** check if we need to start a new session or restore an old one. Create param as used again below */
+        const hasSessionRestored:boolean = this.hasSessionRestored()
+        if (hasSessionRestored) {
+           /** the session hasn't expired so keep the last session time as the session start */
+           SwrveLogger.infoMsg('Session is still going, restoring last session');
+           this.sessionStartedAt = this.profile.LastSession;
+        } else {
+            this.sessionStartedAt = nowInUtcTime()
         }
 
         SwrveLogger.infoMsg('Generating Session Token');
-        this.sessionToken = this.generateSessionToken();
+        this.sessionToken = this.generateSessionToken(this.sessionStartedAt.toString());
+
+        SwrveLogger.infoMsg('Initializing event Manager');
+        this.eventQueueManager = new EventQueueManager(this.config, this.flushConfig, this.getUserID, this.sessionToken);
+             
+        if (!hasSessionRestored) {
+          // Send a session start event, For QA session start, sessionToken and eventQueueManager need to be set.
+          this.sessionStart();
+        }  
 
         /** call the getCampaignsAndResources request to get flush_frequency */
         SwrveLogger.infoMsg('Fetching synchronous campaigns and resources');
         await this.initCampaignsAndResources();
 
         /** start an async function to flush events */
-        SwrveLogger.infoMsg('Initializing event Manager');
-        this.eventQueueManager = new EventQueueManager(this.config, this.flushConfig, this.getUserID, this.sessionToken);
         this.eventQueueManager.init();
 
         /** determines from the profile resolved if there has been a session before */
@@ -362,11 +371,6 @@ class Swrve {
     events.forEach((event) => {
       this.localStorageClient.storeEventOnQueue(this.getUserID, event);
     });
-    this.shouldSendEventsImmediately() ? this.eventQueueManager.sendEvents() : noOp();
-  }
-
-  private shouldSendEventsImmediately() {
-    return this.profile.IsQA && !isNil(this.eventQueueManager);
   }
 
   private eventInternal(eventType?: EventType, params?: INamedEventParams): void {
@@ -379,7 +383,7 @@ class Swrve {
     const events = [queueEntry];
     if (this.profile.IsQA) {
       const qaEntry = this.eventFactory.constructQAEvent(queueEntry);
-      events.push(qaEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
@@ -405,10 +409,9 @@ class Swrve {
                                                                 params.amount,
     );
     const events = [queueEntry] as StorableEvent[];
-
     if (this.profile.IsQA) {
       const qaEntry = this.eventFactory.constructQACurrencyGiven(queueEntry);
-      events.push(qaEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
@@ -417,9 +420,9 @@ class Swrve {
   private sessionStartInternal() {
     const queueEntry = this.eventFactory.constructSessionStart(this.profile.updateSeqnum(), nowInUtcTime());
     const events = [queueEntry];
-
     if (this.profile.IsQA) {
-      events.push(this.eventFactory.constructQASessionStart(queueEntry));
+      const qaEntry = this.eventFactory.constructQASessionStart(queueEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
@@ -432,7 +435,8 @@ class Swrve {
                                                              attributes);
     const events = [queueEntry];
     if (this.profile.IsQA) {
-      events.push(this.eventFactory.constructQAUserUpdate(queueEntry));
+      const qaEntry = this.eventFactory.constructQAUserUpdate(queueEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
@@ -444,7 +448,8 @@ class Swrve {
     const events = [] as StorableEvent[];
     events.push(queueEntry);
     if (this.profile.IsQA) {
-      events.push(this.eventFactory.constructQAUserUpdateWithDate(queueEntry));
+      const qaEntry = this.eventFactory.constructQAUserUpdateWithDate(queueEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
@@ -456,7 +461,8 @@ class Swrve {
     const events = [] as StorableEvent[];
     events.push(queueEntry);
     if (this.profile.IsQA) {
-      events.push(this.eventFactory.constructQAPurchaseEvent(queueEntry));
+      const qaEntry = this.eventFactory.constructQAPurchaseEvent(queueEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
@@ -468,7 +474,8 @@ class Swrve {
     const events = [] as StorableEvent[];
     events.push(queueEntry);
     if (this.profile.IsQA) {
-      events.push(this.eventFactory.constructQAIAPEvent(queueEntry));
+      const qaEntry = this.eventFactory.constructQAIAPEvent(queueEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
@@ -481,14 +488,14 @@ class Swrve {
     const events = [queueEntry];
 
     if (this.profile.IsQA) {
-      events.push(this.eventFactory.constructQADeviceUpdate(queueEntry));
+      const qaEntry = this.eventFactory.constructQADeviceUpdate(queueEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
     }
 
     this.queueEvents(events);
   }
 
-  private generateSessionToken(): string {
-    const time: string = this.sessionStartedAt.toString();
+  private generateSessionToken(time:string): string {
     const md5: Md5 = new Md5();
     md5.appendStr(this.profile.UserId)
       .appendStr(time)
@@ -513,9 +520,6 @@ class Swrve {
         SwrveLogger.infoMsg('session has expired. returning false');
         return false;
       }
-      /** the session hasn't expired so keep the last session time as the session start */
-      SwrveLogger.infoMsg('Session is still going, restoring last session');
-      this.sessionStartedAt = this.profile.LastSession;
       return true;
     }
     return false;

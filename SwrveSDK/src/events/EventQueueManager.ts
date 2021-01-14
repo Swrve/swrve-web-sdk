@@ -7,6 +7,7 @@ import LocalStorageClient from '../storage/LocalStorageClient';
 import Swrve from '../Swrve';
 import { nowInUtcTime } from '../util/Date';
 import SwrveLogger from '../util/SwrveLogger';
+import { StorableEvent } from '../interfaces/IEvents';
 
 class EventQueueManager implements IBackgroundProcessor {
 
@@ -101,6 +102,37 @@ class EventQueueManager implements IBackgroundProcessor {
       SwrveLogger.warnMsg(err);
     } finally {
       this.isSending = false;
+    }
+  }
+
+  public async sendQAEvents(events: StorableEvent[]) {
+    const eventsJson = JSON.stringify(events);
+    SwrveLogger.infoMsg(`Sending QA event...${eventsJson}`);
+    const onSuccess = (response: IRESTResponse) => {
+      SwrveLogger.infoMsg(`QA event successfully sent: ${eventsJson}`);
+    };
+
+    const onFailure = (response: IRESTResponse) => {
+      SwrveLogger.warnMsg(`QA event sending failed, status code: ${response.statusCode} and body:${response.jsonBody} event data:${eventsJson}`);
+    };
+
+    const eventParams = {
+      apiURL: this.swrveConfig.ApiURL,
+      appVersion: this.swrveConfig.AppVersion,
+      deviceID: this.deviceID,
+      sessionToken: this.sessionToken,
+      userId: this.userID,
+    };
+
+    try {
+      if (events.length > 0) {
+        await this.eventAPIClient.sendEventBatch(eventParams, events, onSuccess, onFailure);
+      }
+    } catch (err) {
+      SwrveLogger.warnMsg('There was an error sending the QA event');
+      SwrveLogger.warnMsg(err);
+    } finally {
+      SwrveLogger.infoMsg("Finsihed QA event sending");
     }
   }
 

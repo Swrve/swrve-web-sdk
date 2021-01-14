@@ -22,6 +22,7 @@ import {
   SWRVE_SDK_VERSION,
   SWRVE_TIMEZONE_NAME,
   SWRVE_UTC_OFFSET_SECONDS,
+  SWRVE_DEVICE_TYPE,
 } from './ClientInfoConstants';
 
 abstract class ClientInfoHelper {
@@ -44,6 +45,7 @@ abstract class ClientInfoHelper {
       [SWRVE_INSTALL_DATE]: this.getInstallDate(),
       [SWRVE_BROWSER_NAME]: browserInfo.name,
       [SWRVE_BROWSER_VERSION]: browserInfo.version,
+      [SWRVE_DEVICE_TYPE]: this.getDeviceType(),
     };
   }
   /** OS */
