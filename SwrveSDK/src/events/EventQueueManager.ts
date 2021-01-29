@@ -1,13 +1,13 @@
 import SwrveConfig from '../config/SwrveConfig';
 import EventAPIClient from '../events/EventAPIClient';
 import { IBackgroundProcessor } from '../interfaces/IBackgroundProcessor';
+import { StorableEvent } from '../interfaces/IEvents';
 import { IRESTResponse } from '../interfaces/IRESTClient';
 import { IFlushConfig } from '../interfaces/ISwrveConfig';
 import LocalStorageClient from '../storage/LocalStorageClient';
 import Swrve from '../Swrve';
 import { nowInUtcTime } from '../util/Date';
 import SwrveLogger from '../util/SwrveLogger';
-import { StorableEvent } from '../interfaces/IEvents';
 
 class EventQueueManager implements IBackgroundProcessor {
 
@@ -132,7 +132,7 @@ class EventQueueManager implements IBackgroundProcessor {
       SwrveLogger.warnMsg('There was an error sending the QA event');
       SwrveLogger.warnMsg(err);
     } finally {
-      SwrveLogger.infoMsg("Finsihed QA event sending");
+      SwrveLogger.infoMsg('Finsihed QA event sending');
     }
   }
 

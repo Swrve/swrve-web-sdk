@@ -77,8 +77,6 @@ class Swrve {
   }
 
   public get getUserID(): string {
-    SwrveLogger.infoMsg('UserID Returned:');
-    SwrveLogger.infoMsg(this.profile.UserId);
     return this.profile.UserId;
   }
 
@@ -122,6 +120,7 @@ class Swrve {
   }
 
   /** Public static methods */
+  // tslint:disable-next-line:cognitive-complexity
   public async init(): Promise<Swrve | void> {
     if (!SupportHelper.isTrackingSupported()) {
       throw Error('The configuration shown in the User Agent is not officially supported');
@@ -138,25 +137,26 @@ class Swrve {
         SwrveLogger.infoMsg(`Profile Resolved: ${this.profile.UserId} for extUserId: ${this.profile.ExternalUserId}`);
 
         /** check if we need to start a new session or restore an old one. Create param as used again below */
-        const hasSessionRestored:boolean = this.hasSessionRestored()
+        const hasSessionRestored: boolean = this.hasSessionRestored();
         if (hasSessionRestored) {
            /** the session hasn't expired so keep the last session time as the session start */
-           SwrveLogger.infoMsg('Session is still going, restoring last session');
-           this.sessionStartedAt = this.profile.LastSession;
+          SwrveLogger.infoMsg('Session is still going, restoring last session');
+          this.sessionStartedAt = this.profile.LastSession;
         } else {
-            this.sessionStartedAt = nowInUtcTime()
+          this.sessionStartedAt = nowInUtcTime();
         }
 
         SwrveLogger.infoMsg('Generating Session Token');
         this.sessionToken = this.generateSessionToken(this.sessionStartedAt.toString());
+        SwrveLogger.infoMsg(`Session Token Generated: ${this.sessionToken}`);
 
-        SwrveLogger.infoMsg('Initializing event Manager');
+        SwrveLogger.infoMsg('Initializing Event Manager');
         this.eventQueueManager = new EventQueueManager(this.config, this.flushConfig, this.getUserID, this.sessionToken);
-             
+
         if (!hasSessionRestored) {
           // Send a session start event, For QA session start, sessionToken and eventQueueManager need to be set.
           this.sessionStart();
-        }  
+        }
 
         /** call the getCampaignsAndResources request to get flush_frequency */
         SwrveLogger.infoMsg('Fetching synchronous campaigns and resources');
@@ -314,6 +314,12 @@ class Swrve {
                                                         'event',
                                                         eventName);
     const events = [queueEntry];
+
+    if (this.profile.IsQA) {
+      const qaEntry = this.eventFactory.constructQAEvent(queueEntry);
+      this.eventQueueManager.sendQAEvents([qaEntry]);
+    }
+
     this.queueEvents(events);
   }
 
@@ -495,7 +501,7 @@ class Swrve {
     this.queueEvents(events);
   }
 
-  private generateSessionToken(time:string): string {
+  private generateSessionToken(time: string): string {
     const md5: Md5 = new Md5();
     md5.appendStr(this.profile.UserId)
       .appendStr(time)

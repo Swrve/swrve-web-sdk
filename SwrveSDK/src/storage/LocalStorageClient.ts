@@ -31,7 +31,12 @@ class LocalStorageClient {
     return this.storageManager.writeLocal(this.userIDKey(externalUserID), value);
   }
   public fetchUserID(externalUserID: string): string {
-    return this.storageManager.readLocal(this.userIDKey(externalUserID));
+    let userId = this.storageManager.readLocal(this.userIDKey(externalUserID));
+    if (userId != null) {
+      // if swrve id happens to be a string of just digits, Json parse will return it as a number so we use toString for all
+      userId = userId.toString();
+    }
+    return userId;
   }
 
   /* User Namespace */

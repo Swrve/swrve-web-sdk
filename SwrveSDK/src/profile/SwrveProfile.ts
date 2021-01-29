@@ -22,7 +22,7 @@ class SwrveProfile {
   private seqnum: number;
   private etag: string;
   private isQA: boolean;
-  private isIdentityResolved;
+  private isIdentityResolved: boolean;
 
   public get ExternalUserId(): string {
     return this.externalUserId;
