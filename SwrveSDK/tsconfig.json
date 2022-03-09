@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
+    "target": "es5",
     "esModuleInterop": true,
     "lib": [
       "dom",
@@ -11,16 +11,15 @@
       "es2015",
       "webworker"
     ],
+    "rootDirs": ["./src"],
     "module": "commonjs",
-    "outDir": "./dist/types",
+    "declaration": true,
+    "outDir": "./dist/lib",
     "resolveJsonModule": true,
-    "sourceMap": true,
-    "target": "es5",
-  },
-  "include": [
-    "./src"
-  ],
-  "exclude": [
-    "node_modules"
-  ] 
+    "forceConsistentCasingInFileNames": true,
+    // "strict": true,
+    // "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true
+  }
 }

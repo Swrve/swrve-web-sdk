@@ -1,128 +1,327 @@
-import SwrveConfig from './config/SwrveConfig';
-import SwrveValidator from './helpers/SwrveValidator';
+import WebPlatformBridge from "./platform/WebPlatformBridge";
 import {
-  ICurrencyParams,
-  IIAPParams,
-  INamedEventParams,
-  IPurchaseParams,
-  IUserUpdateClientInfoAttributes,
-  IUserUpdateWithDateParams,
-  StorableEvent,
-} from './interfaces/IEvents';
-import { ISwrveConfig } from './interfaces/ISwrveConfig';
-import { IValidateError } from './interfaces/ISwrveValidator';
-import SwrvePushManager from './push/SwrvePushManager';
-import Swrve from './Swrve';
-import SwrveEnvironment from './util/SwrveEnvironment';
+  SwrveCoreSDK,
+  ResourceManager,
+  IUserInfo,
+  ISwrveCampaign,
+  IDictionary,
+  IReadonlyDictionary,
+  IReward,
+  ISwrveWebPushConfig,
+  ISwrveEmbeddedMessage,
+  IUserResource,
+} from "@swrve/web-core";
+import SwrvePushManager from "./push/SwrvePushManager";
+import SwrveLogger from "./util/SwrveLogger";
+import { sdkVersion } from "./helpers/ClientInfoConstants";
+import { ISwrveSDKConfig } from "./interfaces/ISwrveSDKConfig";
+import { IValidateError } from "./interfaces/ISwrveValidator";
+import SwrveValidator from "./helpers/SwrveValidator";
 
-export type OnSwrveLoadedCallback = (error: string) => void;
-let swrveInternal: Swrve | null = null;
+/** Callbacks */
+export type OnSwrveLoadedCallback = () => void;
+export type OnResourcesLoadedCallback = (
+  resources: ReadonlyArray<IUserResource> | null
+) => void;
+export type GetResourcesCallback = (
+  resources: ReadonlyArray<IUserResource>
+) => void;
+export type GetUserResourcesDiffCallback = (
+  oldDictionary: IDictionary<IUserResource>,
+  newDictionary: IDictionary<IUserResource>,
+  json: any
+) => any;
 
-class SwrveSDK {
+const webApiKeyCallback = (key: string, autoSubscribe: boolean) => {
+  /** Initialize Push Manager */
+  SwrveLogger.debug(`Initializing PushManager with WebPushAPIKey: ${key}`);
+  SwrveSDK.initializePushManager(key);
 
-  private static instance: SwrveSDK|null = null;
+  if (autoSubscribe) {
+    /** Register for push if auto subscribe */
+    SwrveLogger.debug("autoPushSubscribe: ON");
+    SwrveSDK.registerPush();
+  } else {
+    SwrveLogger.debug(
+      "SwrvePushManager Will not initialize. Auto subscribe is disabled"
+    );
+  }
+};
 
-  public static createInstance(config: ISwrveConfig): SwrveSDK {
+let _swrveCoreSDK: SwrveCoreSDK | null = null;
 
-    if (!SwrveSDK.instance) {
-      SwrveSDK.instance = new SwrveSDK(config);
-      SwrveSDK.instance.init();
-      return SwrveSDK.instance;
-    }
+export class SwrveSDK {
+  private static _instance: SwrveSDK | null = null;
+  private static _swrvePushManager: SwrvePushManager | null = null;
+  private static _config: ISwrveSDKConfig | null = null;
 
-    return SwrveSDK.instance;
+  public static initWithConfig(
+    config: ISwrveSDKConfig,
+    onLoaded?: OnSwrveLoadedCallback
+  ): SwrveSDK {
+    SwrveSDK.createInstance(config);
+    SwrveSDK._instance.init(onLoaded);
+
+    return SwrveSDK._instance;
   }
 
-  private constructor(config: ISwrveConfig) {
-    const errors: IValidateError | void = SwrveValidator.validateInitParams(config);
+  public static createInstance(config: ISwrveSDKConfig): SwrveSDK {
+    if (SwrveSDK._instance) return SwrveSDK._instance;
+
+    const errors: IValidateError | void =
+      SwrveValidator.validateInitParams(config);
     if (errors) {
       SwrveValidator.outputErrors(errors);
-      throw new TypeError('Parameters are not correct');
+      if (errors.devErrors.length == 1) {
+        throw new Error(errors.devErrors[0]);
+      } else {
+        throw new Error("Multiple issues found with configuration");
+      }
     }
 
-    SwrveEnvironment.Mode = config.mode || 'prod';
-    swrveInternal = Swrve.createInstance(config);
+    this._swrvePushManager = new SwrvePushManager(config);
+    /**  Apply WebAPI Config callback  */
+    config.webPushConfig = {
+      webApiKeyCallback,
+      autoPushSubscribe: config.autoPushSubscribe,
+    } as ISwrveWebPushConfig;
+    this._config = config;
+
+    SwrveSDK._instance = new SwrveSDK(this._config);
+    return SwrveSDK._instance;
   }
 
-  public init(): Promise <Swrve | void> {
-    return SwrveSDK.checkInstance().init();
+  private constructor(config: ISwrveSDKConfig) {
+    _swrveCoreSDK = SwrveCoreSDK.createInstance(config, {
+      platform: new WebPlatformBridge(),
+    });
   }
 
-  public static checkInstance(): Swrve {
-    if (swrveInternal == null) {
-      throw Error('Please call SwrveSDK.createInstance() first');
-    }
-    return swrveInternal;
+  public init(onLoaded?: OnSwrveLoadedCallback): void {
+    if (_swrveCoreSDK == null)
+      throw Error("Please call SwrveSDK.createInstance() first.");
+
+    _swrveCoreSDK.init(onLoaded);
   }
 
-  /** public facing function calls */
+  public static checkCoreInstance(): typeof SwrveCoreSDK {
+    if (_swrveCoreSDK == null)
+      throw Error("Please call SwrveSDK.createInstance() first.");
 
-  public static namedEvent(params: INamedEventParams): void {
-    SwrveSDK.checkInstance().namedEvent(params);
+    return SwrveCoreSDK;
   }
 
-  public static userUpdate(attributes: IUserUpdateClientInfoAttributes): void {
-    SwrveSDK.checkInstance().userUpdate(attributes);
+  //*************************************** Accessor methods ************************************//
+
+  public static getInstance(): SwrveSDK {
+    if (SwrveSDK._instance == null)
+      throw Error("Please call SwrveSDK.createInstance() first.");
+
+    return SwrveSDK._instance;
   }
 
-  public static userUpdateWithDate(params: IUserUpdateWithDateParams): void {
-    SwrveSDK.checkInstance().userUpdateWithDate(params);
-  }
-
-  public static purchaseEvent (params: IPurchaseParams): void {
-    SwrveSDK.checkInstance().purchaseEvent(params);
-  }
-
-  public static iapEvent (params: IIAPParams): void {
-    SwrveSDK.checkInstance().iapEvent(params);
-  }
-
-  public static currencyGiven (params: ICurrencyParams): void {
-    SwrveSDK.checkInstance().currencyGiven(params);
-  }
-
-  public static getQueuedEvents(): StorableEvent[] {
-    return SwrveSDK.checkInstance().getQueuedEvents();
-  }
-
-  public static getConfig(): SwrveConfig {
-    return SwrveSDK.checkInstance().Config;
-  }
-
-  public static getPushManager(): SwrvePushManager {
-    return SwrveSDK.checkInstance().SwrvePushManager;
-  }
-
-  public static registerPush(onSuccess?: () => void, onFailure?: (err?: Error) => Error): void {
-    return SwrveSDK.checkInstance().registerPush(onSuccess, onFailure);
-  }
-
-  public static unregisterPush(onSuccess?: () => void, onFailure?: (err?: Error) => void): void {
-    return SwrveSDK.checkInstance().unregisterPush(onSuccess, onFailure);
+  public static getUserInfo(): IUserInfo {
+    return SwrveSDK.checkCoreInstance().getUserInfo();
   }
 
   public static getUserId(): string {
-    return SwrveSDK.checkInstance().getUserID;
+    return SwrveSDK.checkCoreInstance().getUserId();
   }
 
-  public static getExternalUserId(): string {
-    return SwrveSDK.checkInstance().Config.ExternalUserId;
+  public static getExternalUserId(): string | null {
+    return SwrveSDK.checkCoreInstance().getExternalUserId();
   }
+
+  public static getConfig(): Readonly<ISwrveSDKConfig> {
+    const coreConfig =
+      SwrveSDK.checkCoreInstance().getConfig() as ISwrveSDKConfig;
+    coreConfig.externalUserId = this._config.externalUserId;
+    return coreConfig;
+  }
+
+  public static getSDKVersion(): string {
+    return sdkVersion;
+  }
+
+  public static getRealTimeUserProperties(): IDictionary<string> {
+    return SwrveSDK.checkCoreInstance().getRealTimeUserProperties();
+  }
+
+  //*************************************** Event Management ************************************//
+
+  public static event(
+    name: string,
+    payload: IDictionary<string | number> = {}
+  ): void {
+    SwrveSDK.checkCoreInstance().event(name, payload);
+  }
+
+  public static userUpdate(
+    attributes: IReadonlyDictionary<string | number | boolean>
+  ): void {
+    SwrveSDK.checkCoreInstance().userUpdate(attributes);
+  }
+
+  public static userUpdateWithDate(keyName: string, date: Date): void {
+    SwrveSDK.checkCoreInstance().userUpdateWithDate(keyName, date);
+  }
+
+  public static purchase(
+    name: string,
+    currency: string,
+    cost: number,
+    quantity: number
+  ): void {
+    SwrveSDK.checkCoreInstance().purchase(name, currency, cost, quantity);
+  }
+
+  public static iap(
+    quantity: number,
+    productId: string,
+    productPrice: number,
+    currency: string,
+    rewards?: IReadonlyDictionary<IReward>
+  ): void {
+    SwrveSDK.checkCoreInstance().iap(
+      quantity,
+      productId,
+      productPrice,
+      currency,
+      rewards
+    );
+  }
+
+  public static currencyGiven(currencyGiven: string, amount: number): void {
+    SwrveSDK.checkCoreInstance().currencyGiven(currencyGiven, amount);
+  }
+
+  public static sendQueuedEvents(): void {
+    SwrveSDK.checkCoreInstance().sendQueuedEvents();
+  }
+
+  //*************************************** Lifecycle Management ************************************//
 
   public static shutdown(): void {
-    if (swrveInternal != null) {
-      Swrve.shutdown();
-    }
+    SwrveSDK.checkCoreInstance().shutdown();
 
-    swrveInternal = null;
-    SwrveSDK.instance = null;
+    _swrveCoreSDK = null;
+    SwrveSDK._instance = null;
   }
 
-  /** callbacks */
+  public static stopTracking(): void {
+    SwrveSDK.checkCoreInstance().stopTracking();
+  }
 
-  public static set onSwrveLoaded(callback: OnSwrveLoadedCallback) {
-    SwrveSDK.checkInstance().onSwrveLoaded = callback;
+  //*************************************** Other ************************************//
+
+  public static saveToStorage(): void {
+    SwrveSDK.checkCoreInstance().saveToStorage();
+  }
+
+  //*************************************** User Resources *****************************//
+
+  public static getResourceManager(): ResourceManager {
+    return SwrveSDK.checkCoreInstance().getResourceManager();
+  }
+
+  public static onResourcesLoaded(callback: OnResourcesLoadedCallback): void {
+    SwrveSDK.checkCoreInstance().onResourcesLoaded(callback);
+  }
+
+  public static getResources(callback: GetResourcesCallback): void {
+    SwrveSDK.checkCoreInstance().getUserResources(callback);
+  }
+
+  public static getUserResourcesDiff(
+    callback: GetUserResourcesDiffCallback
+  ): void {
+    SwrveSDK.checkCoreInstance().getUserResourcesDiff(callback);
+  }
+
+  //*************************************** Embedded Campaigns *****************************//
+
+  public static embeddedMessageWasShownToUser(message: ISwrveEmbeddedMessage) {
+    SwrveSDK.checkCoreInstance().embeddedMessageWasShownToUser(message);
+  }
+
+  public static embeddedMessageButtonWasPressed(
+    message: ISwrveEmbeddedMessage,
+    buttonName: string
+  ) {
+    SwrveSDK.checkCoreInstance().embeddedMessageButtonWasPressed(
+      message,
+      buttonName
+    );
+  }
+
+  public static getPersonalizedEmbeddedMessageData(
+    message: ISwrveEmbeddedMessage,
+    personalizationProperties: IDictionary<string>
+  ): string | null {
+    return SwrveSDK.checkCoreInstance().getPersonalizedEmbeddedMessageData(
+      message,
+      personalizationProperties
+    );
+  }
+
+  public static getPersonalizedText(
+    text: string,
+    personalizationProperties: IDictionary<string>
+  ): string | null {
+    return SwrveSDK.checkCoreInstance().getPersonalizedText(
+      text,
+      personalizationProperties
+    );
+  }
+
+  //*************************************** Message Center ******************************//
+
+  public static getMessageCenterCampaigns(
+    personalizationProperties?: IDictionary<string>
+  ): ISwrveCampaign[] {
+    return SwrveSDK.checkCoreInstance().getMessageCenterCampaigns(
+      personalizationProperties
+    );
+  }
+
+  public static showMessageCenterCampaign(
+    campaign: ISwrveCampaign,
+    personalizationProperties?: IDictionary<string>
+  ): boolean {
+    return SwrveSDK.checkCoreInstance().showMessageCenterCampaign(
+      campaign,
+      personalizationProperties
+    );
+  }
+
+  public static markMessageCenterCampaignAsSeen(campaign: ISwrveCampaign) {
+    SwrveSDK.checkCoreInstance().markMessageCenterCampaignAsSeen(campaign);
+  }
+
+  //**************************************** Push Management ****************************//
+
+  public static initializePushManager(webPushApiKey: string): void {
+    SwrveSDK.checkCoreInstance();
+    this._swrvePushManager.init(webPushApiKey);
+  }
+
+  public static getPushManager(): SwrvePushManager {
+    return this._swrvePushManager;
+  }
+
+  public static registerPush(
+    onSuccess?: () => void,
+    onFailure?: (error: Error) => void
+  ): void {
+    SwrveSDK.checkCoreInstance();
+    this._swrvePushManager.registerPush(onSuccess, onFailure);
+  }
+
+  public static unregisterPush(
+    onSuccess?: () => void,
+    onFailure?: (err: Error) => void
+  ): void {
+    SwrveSDK.checkCoreInstance();
+    this._swrvePushManager.unregisterPush(onSuccess, onFailure);
   }
 }
-
-export default SwrveSDK;

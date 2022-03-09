@@ -1,7 +1,6 @@
 import { messageConfig } from '../config/AppConfigParams';
-import { ISwrveConfig } from '../interfaces/ISwrveConfig';
+import { ISwrveSDKConfig } from '../interfaces/ISwrveSDKConfig';
 import { IValidateError } from '../interfaces/ISwrveValidator';
-import SwrveEnvironment from '../util/SwrveEnvironment';
 import SwrveLogger from '../util/SwrveLogger';
 
 /** Main Error Title */
@@ -25,7 +24,8 @@ abstract class SwrveValidator {
     if (!appId) { errors.push('appId doesn\'t exist'); }
 
     const type: string = 'number';
-    if (appId && typeof appId !== type) { errors.push(`appId should be a ${type}`); }
+
+    if (appId && isNaN(appId)) { errors.push(`appId should be a ${type}`); }
 
     return errors;
   }
@@ -58,16 +58,16 @@ abstract class SwrveValidator {
     return errors;
   }
 
-  /** Validates a apiURL */
-  public static validateApiUrl(apiURL: string | void): string[] {
+  /** Validates a eventsUrl */
+  public static validateEventsUrl(eventsUrl: string | void): string[] {
     const errors: string[] = [];
 
     const type: string = 'string';
-    if (apiURL && typeof apiURL !== type) { errors.push(`apiURL should be a ${type}`); }
+    if (eventsUrl && typeof eventsUrl !== type) { errors.push(`eventsUrl should be a ${type}`); }
 
     const urlRegex: RegExp = new RegExp(urlExpr);
 
-    if (apiURL && !urlRegex.test(apiURL)) { errors.push('apiURL isn\'t a valid URL'); }
+    if (eventsUrl && !urlRegex.test(eventsUrl)) { errors.push('eventsUrl isn\'t a valid URL'); }
 
     return errors;
   }
@@ -98,32 +98,31 @@ abstract class SwrveValidator {
   }
 
   /** Validates initial parameters passed to the SwrveSession constructor */
-  public static validateInitParams(params: ISwrveConfig): IValidateError | void {
+  public static validateInitParams(params: ISwrveSDKConfig): IValidateError | void {
     const errorObj: IValidateError = {} as IValidateError;
 
     if (!params || Object.prototype.toString.call(params) !== '[object Object]') {
       errorObj.devErrors = [
         `Init params should follow the scheme:
         {
+          externalUserId: string - *required
           appId: number - *required
           apiKey: string - *required
-          apiURL: string
-          contentURL: string
+          eventsUrl: string
+          contentUrl: string
           sessionTimeout: number
-          externalUserId: string - *required
           version: string
-          devMode: boolean
         }`,
       ];
     } else {
       errorObj.devErrors = [
         ...this.validateExternalUserId(params.externalUserId),
-        ...this.validateAppId(params.appId),
         ...this.validateApiKey(params.apiKey),
-        ...this.validateContentUrl(params.contentURL),
-        ...this.validateApiUrl(params.apiURL),
+        ...this.validateAppId(params.appId),
+        ...this.validateContentUrl(params.contentUrl),
+        ...this.validateEventsUrl(params.eventsUrl),
         ...this.validateVersion(params.appVersion),
-        ...this.validateSessionTimeout(params.httpTimeoutSeconds),
+        ...this.validateSessionTimeout(params.httpsTimeoutSeconds),
       ];
 
     }
@@ -134,15 +133,10 @@ abstract class SwrveValidator {
   }
 
   public static outputErrors(errors: IValidateError): void {
-    /** Development Errors */
-    if (!SwrveEnvironment.ProdMode) {
-      SwrveLogger.errorMsg(`${messageConfig.title} ${messageConfig.types.error}: ${errors.mainError}`);
+      SwrveLogger.error(`${messageConfig.title} ${messageConfig.types.error}: ${errors.mainError}`);
       errors.devErrors.forEach((devError: string) => {
-        SwrveLogger.errorMsg(` ${devError}`);
+        SwrveLogger.error(` ${devError}`);
       });
-    } else {
-      SwrveLogger.errorMsg(`${messageConfig.title} ${messageConfig.types.error}: ${errors.mainError}`);
-    }
   }
 
 }
