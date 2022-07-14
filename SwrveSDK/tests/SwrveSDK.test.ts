@@ -99,7 +99,7 @@ describe("SwrveSDK", () => {
     });
 
     it("must be the correct value", () => {
-      expect(SwrveSDK.getSDKVersion()).toBe("Web 2.0.0");
+      expect(SwrveSDK.getSDKVersion()).toBe("Web 2.0.1");
     });
   });
 

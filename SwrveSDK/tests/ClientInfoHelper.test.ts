@@ -179,7 +179,7 @@ import ClientInfoHelper from "../src/helpers/ClientInfoHelper";
       it('will return the correct SDK version', () => {
         const version = ClientInfoHelper.getSDKVersion();
         expect(version).toBeDefined();
-        expect(version).toEqual('Web 2.0.0');
+        expect(version).toEqual('Web 2.0.1');
       });
     });
   });

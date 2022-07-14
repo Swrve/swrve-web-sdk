@@ -1,6 +1,6 @@
 {
 	"name": "@swrve/web-sdk",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"author": "Swrve Inc.",
 	"license": "Apache-2.0",
 	"keywords": [
@@ -58,6 +58,6 @@
 		"webpack-merge": "4.2.1"
 	},
 	"dependencies": {
-		"@swrve/web-core": "1.0.0"
+		"@swrve/web-core": "1.0.1"
 	}
 }
