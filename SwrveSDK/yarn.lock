@@ -490,10 +490,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@swrve/web-core@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.0.0.tgz#3280a5f94f3779adcf5a52f63bfb07a0889c01b8"
-  integrity sha512-R4dr0O3l5uQSLi3vqKt90O5nEz/J8WuWRxMzHqR2YH5e3HVl3U/UJp0JIUHbiQJ2FVldO6nX5FMgxZl5y3oUDw==
+"@swrve/web-core@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.0.1.tgz#d379f144e3378162fc91e4a04183584cade5ed14"
+  integrity sha512-aLzerUomaceAM9ydXuGxOWr6Ncmvi2RUcQvp6CuOV4+RH0UQ6h5FxXoEGUyXoRd3uKFngnYi5lDOblIAlN+YxA==
   dependencies:
     "@types/crypto-js" "4.0.2"
     crypto-js "4.1.1"
@@ -1000,6 +1000,11 @@ bfj@^6.1.1:
     hoopy "^0.1.4"
     tryer "^1.0.1"
 
+big.js@^3.1.3:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/big.js/-/big.js-3.2.0.tgz#a5fc298b81b9e0dca2e458824784b65c52ba588e"
+  integrity sha512-+hN/Zh2D08Mx65pZ/4g5bsmNiZUuChDiQfTUQ7qJr4/kuopCr88xZsAXv6mBoZEsUI4OuGHlX59qE94K2mMW8Q==
+
 bluebird@^3.5.5:
   version "3.7.2"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.7.2.tgz#9f229c15be272454ffa973ace0dbee79a1b0c36f"
@@ -1409,6 +1414,11 @@ emoji-regex@^8.0.0:
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-8.0.0.tgz#e818fd69ce5ccfcb404594f842963bf53164cc37"
   integrity sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==
+
+emojis-list@^2.0.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/emojis-list/-/emojis-list-2.1.0.tgz#4daa4d9db00f9819880c79fa457ae5b09a1fd389"
+  integrity sha512-knHEZMgs8BB+MInokmNTg/OyPlAddghe1YBgNwJBc5zsJi/uyIcXoSDsL/W9ymOsBoBGdPIHXYJ9+qKFwRwDng==
 
 encodeurl@~1.0.2:
   version "1.0.2"
@@ -2425,6 +2435,11 @@ json5@2.x, json5@^2.1.2:
   dependencies:
     minimist "^1.2.5"
 
+json5@^0.5.0:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/json5/-/json5-0.5.1.tgz#1eade7acc012034ad84e2396767ead9fa5495821"
+  integrity sha512-4xrs1aW+6N5DalkqSVA8fxh458CXvR99WU8WLKmq4v8eWAL86Xo3BVqyd3SkA9wEVjCMqyvvRRkshAdOnBp5rw==
+
 kind-of@^6.0.2:
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
@@ -2452,6 +2467,16 @@ loader-runner@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/loader-runner/-/loader-runner-4.2.0.tgz#d7022380d66d14c5fb1d496b89864ebcfd478384"
   integrity sha512-92+huvxMvYlMzMt0iIOukcwYBFpkYJdpl2xsZ7LrlayO7E8SOv+JJUEK17B/dJIHAOLMfh2dZZ/Y18WgmGtYNw==
+
+loader-utils@^0.2.6:
+  version "0.2.17"
+  resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-0.2.17.tgz#f86e6374d43205a6e6c60e9196f17c0299bfb348"
+  integrity sha512-tiv66G0SmiOx+pLWMtGEkfSEejxvb6N6uRrQjfWJIT79W9GMpgKeCAmm9aVBKtd4WEgntciI8CsGqjpDoCWJug==
+  dependencies:
+    big.js "^3.1.3"
+    emojis-list "^2.0.0"
+    json5 "^0.5.0"
+    object-assign "^4.0.1"
 
 locate-path@^5.0.0:
   version "5.0.0"
@@ -2626,6 +2651,11 @@ nwsapi@^2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/nwsapi/-/nwsapi-2.2.0.tgz#204879a9e3d068ff2a55139c2c772780681a38b7"
   integrity sha512-h2AatdwYH+JHiZpv7pt/gSX1XoRGb7L/qSIeuqA6GwYoF9w1vP1cw42TO0aI2pNyshRK5893hNSl+1//vHK7hQ==
+
+object-assign@^4.0.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
+  integrity sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==
 
 on-finished@~2.3.0:
   version "2.3.0"
@@ -3073,6 +3103,13 @@ strip-final-newline@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/strip-final-newline/-/strip-final-newline-2.0.0.tgz#89b852fb2fcbe936f6f4b3187afb0a12c1ab58ad"
   integrity sha512-BrpvfNAE3dcvq7ll3xVumzjKjZQ5tI1sEUIKr3Uoks0XUl45St3FlatVqef9prk4jRDzhW6WZg+3bk93y6pLjA==
+
+strip-loader@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/strip-loader/-/strip-loader-0.1.2.tgz#5166038181599342a424c62a49bbd21902ce8f33"
+  integrity sha512-oxilof7476ID2hyp0SRW689nC1R+45UTwobgKXXnrP6bb/l0napWjrHpzQTScYAmrp0E4bft7CQSCgE5PqyNCQ==
+  dependencies:
+    loader-utils "^0.2.6"
 
 supports-color@^2.0.0:
   version "2.0.0"
