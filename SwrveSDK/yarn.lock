@@ -490,10 +490,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@swrve/web-core@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.0.0.tgz#3280a5f94f3779adcf5a52f63bfb07a0889c01b8"
-  integrity sha512-R4dr0O3l5uQSLi3vqKt90O5nEz/J8WuWRxMzHqR2YH5e3HVl3U/UJp0JIUHbiQJ2FVldO6nX5FMgxZl5y3oUDw==
+"@swrve/web-core@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.0.1.tgz#d379f144e3378162fc91e4a04183584cade5ed14"
+  integrity sha512-aLzerUomaceAM9ydXuGxOWr6Ncmvi2RUcQvp6CuOV4+RH0UQ6h5FxXoEGUyXoRd3uKFngnYi5lDOblIAlN+YxA==
   dependencies:
     "@types/crypto-js" "4.0.2"
     crypto-js "4.1.1"
@@ -2419,11 +2419,9 @@ json-schema-traverse@^0.4.1:
   integrity sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==
 
 json5@2.x, json5@^2.1.2:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/json5/-/json5-2.2.0.tgz#2dfefe720c6ba525d9ebd909950f0515316c89a3"
-  integrity sha512-f+8cldu7X/y7RAJurMEJmdoKXGB/X550w2Nr3tTbezL6RwEE/iMcm+tZnXeoZtKuOq6ft8+CqzEkrIgx1fPoQA==
-  dependencies:
-    minimist "^1.2.5"
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/json5/-/json5-2.2.3.tgz#78cd6f1a19bdc12b73db5ad0c61efd66c1e29283"
+  integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
 
 kind-of@^6.0.2:
   version "6.0.3"
