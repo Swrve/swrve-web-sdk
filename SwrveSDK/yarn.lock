@@ -490,10 +490,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@swrve/web-core@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.0.0.tgz#3280a5f94f3779adcf5a52f63bfb07a0889c01b8"
-  integrity sha512-R4dr0O3l5uQSLi3vqKt90O5nEz/J8WuWRxMzHqR2YH5e3HVl3U/UJp0JIUHbiQJ2FVldO6nX5FMgxZl5y3oUDw==
+"@swrve/web-core@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.0.1.tgz#d379f144e3378162fc91e4a04183584cade5ed14"
+  integrity sha512-aLzerUomaceAM9ydXuGxOWr6Ncmvi2RUcQvp6CuOV4+RH0UQ6h5FxXoEGUyXoRd3uKFngnYi5lDOblIAlN+YxA==
   dependencies:
     "@types/crypto-js" "4.0.2"
     crypto-js "4.1.1"
@@ -2554,9 +2554,9 @@ minimatch@^3.0.4:
     brace-expansion "^1.1.7"
 
 minimist@^1.2.5:
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.5.tgz#67d66014b66a6a8aaa0c083c5fd58df4e4e97602"
-  integrity sha512-FM9nNUYrRBAELZQT3xeZQ7fmMOBg6nWNmJKTcgsJeaLstP/UODVpGsr5OhXhhXg6f+qtJ8uiZ+PUxkDWcgIXLw==
+  version "1.2.8"
+  resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.8.tgz#c1a464e7693302e082a075cee0c057741ac4772c"
+  integrity sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==
 
 mkdirp@^0.5.1:
   version "0.5.5"
