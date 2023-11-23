@@ -240,7 +240,7 @@ export default class WebPlatformBridge implements IPlatform {
 
   public getDeviceProperties(): IDictionary<string | number> {
     let clientInfo = ClientInfoHelper.getClientInfo();
-    clientInfo.deviceID = this._deviceID; 
+    clientInfo[SWRVE_DEVICE_ID] = this._deviceID;
     return clientInfo;
   }
 

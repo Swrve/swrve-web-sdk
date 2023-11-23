@@ -247,8 +247,7 @@ class SwrvePushManager {
       `sending push registration properties : ${this._webPushToken}`
     );
     SwrveLogger.debug("sending push subscription", subscription);
-
-    SwrveSDK.userUpdate({ "swrve.web_push_token": this._webPushToken });
+    SwrveSDK.checkCoreInstance().deviceUpdate({ "swrve.web_push_token": this._webPushToken })
     this.sendBrowserPermissions(pushSubscription);
   }
 
@@ -275,7 +274,7 @@ class SwrvePushManager {
   }
 
   private static sendPermissionsUpdate(state: string) {
-    SwrveSDK.userUpdate({ "swrve.permission.web.push_notifications": state });
+    SwrveSDK.checkCoreInstance().deviceUpdate({ "swrve.permission.web.push_notifications": state })
   }
 
   private browserHasPermissionsAccess(): boolean {

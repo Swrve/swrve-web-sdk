@@ -100,7 +100,7 @@ import ClientInfoHelper from "../src/helpers/ClientInfoHelper";
       });
 
       it('will return the correct country code', () => {
-        expect(ClientInfoHelper.getCountryCode()).toEqual('Unknown');
+        expect(ClientInfoHelper.getCountryCode()).toEqual('US');
       });
     });
 
@@ -110,7 +110,7 @@ import ClientInfoHelper from "../src/helpers/ClientInfoHelper";
       });
 
       it('will return the correct country code', () => {
-        expect(ClientInfoHelper.getRegion()).toEqual('Unknown');
+        expect(ClientInfoHelper.getRegion()).toEqual('US');
       });
     });
 
@@ -179,7 +179,7 @@ import ClientInfoHelper from "../src/helpers/ClientInfoHelper";
       it('will return the correct SDK version', () => {
         const version = ClientInfoHelper.getSDKVersion();
         expect(version).toBeDefined();
-        expect(version).toEqual('Web 2.0.3');
+        expect(version).toEqual('Web 2.1.0');
       });
     });
   });

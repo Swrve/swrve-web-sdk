@@ -15,15 +15,13 @@ import {
   SWRVE_BROWSER_NAME,
   SWRVE_BROWSER_VERSION,
   SWRVE_COUNTRY_CODE,
-  SWRVE_DEVICE_ID,
   SWRVE_DEVICE_REGION,
-  SWRVE_LANGUAGE,
   SWRVE_NAV_LANGUAGE,
+  SWRVE_LANGUAGE,
   SWRVE_OS,
   SWRVE_OS_VERSION,
   SWRVE_SDK_VERSION,
   SWRVE_TIMEZONE_NAME,
-  SWRVE_UTC_OFFSET_SECONDS,
   SWRVE_DEVICE_TYPE,
   SWRVE_DEVICE_NAME,
 } from "./ClientInfoConstants";
@@ -34,7 +32,6 @@ abstract class ClientInfoHelper {
     const browserInfo: IBrowser = this.getBrowserInfo();
 
     return {
-      [SWRVE_DEVICE_ID]: this.getDeviceId(),
       [SWRVE_DEVICE_NAME]: this.getDeviceName(),
       [SWRVE_OS]: "web",
       [SWRVE_OS_VERSION]: osInfo.version,
@@ -120,13 +117,10 @@ abstract class ClientInfoHelper {
 
   /** Get the Language the Browser is set to */
   public static getBrowserLanguage(): string {
-    /** Default language => English */
-    const cannotFindLanguage: string = "Unknown";
-    return (
-      navigator[SWRVE_NAV_LANGUAGE] ||
-      navigator.language.split("-")[0] ||
-      cannotFindLanguage
-    );
+    /** Default language => Unknown */
+    return navigator[SWRVE_NAV_LANGUAGE] ||
+           navigator.language.split("-")[0] ||
+           "Unknown";
   }
 
   /** Timezone Name */
@@ -150,20 +144,14 @@ abstract class ClientInfoHelper {
 
   /** CountryCode */
   public static getCountryCode(): string {
-    // TODO: navigator.language.split("-")[1] ||
-    return "Unknown";
+    const { region } = new Intl.Locale(navigator.language)
+    return region || "Unknown";
   }
 
   /** Region Info */
   public static getRegion(): string {
-    return "Unknown";
-  }
-
-  /** Device ID */ //Return deviceID used for clientInfo
-  public static getDeviceId(): string {
-    // const currentInstance = Swrve.getCurrentInstance();
-    // return currentInstance ? currentInstance.DeviceId.toString() : null;
-    return null;
+    const { region } = new Intl.Locale(navigator.language)
+    return region || "Unknown";
   }
 
   /** Device Type */

@@ -75,7 +75,7 @@ describe("SwrvePushManager", () => {
 
   describe("sendRegistrationProperties()", () => {
     let pushManager;
-    let userUpdateMock;
+    let deviceUpdateMock;
 
     const stubbedSub = {
       endpoint: "http://my-push-service.com",
@@ -100,19 +100,19 @@ describe("SwrvePushManager", () => {
 
       jest.spyOn(swrvePushManager, "isPushSupported").mockReturnValue(true);
 
-      userUpdateMock = jest.fn();
-      SwrveSDK.userUpdate = userUpdateMock;
+      deviceUpdateMock = jest.fn();
+      SwrveSDK.checkCoreInstance().deviceUpdate = deviceUpdateMock;
 
       const loggerMock = jest.fn();
       SwrveLogger.info = loggerMock;
     });
 
-    it("will trigger a user update", () => {
+    it("will trigger a deviceUpdate update", () => {
       const expectedToken = `${stubbedSub.endpoint}|${stubbedSub.keys.p256dh}|${stubbedSub.keys.auth}`;
       pushManager.sendPushRegistrationProperties(stubbedSub);
 
-      expect(userUpdateMock.mock.calls.length).toBe(2);
-      expect(SwrveSDK.userUpdate).toHaveBeenCalledWith({
+      expect(deviceUpdateMock.mock.calls.length).toBe(2);
+      expect(SwrveSDK.checkCoreInstance().deviceUpdate).toHaveBeenCalledWith({
         "swrve.web_push_token": expectedToken,
       });
     });
@@ -126,10 +126,10 @@ describe("SwrvePushManager", () => {
 
     describe("sendBrowserPermissions()", () => {
       describe("when there is push permission state", () => {
-        it("will send a user update with permissions", (done) => {
+        it("will send a device update with permissions", (done) => {
           pushManager.sendBrowserPermissions();
-          expect(SwrveSDK.userUpdate).toHaveBeenCalled();
-          const permissionEvent = userUpdateMock.mock.calls[0][0];
+          expect(SwrveSDK.checkCoreInstance().deviceUpdate).toHaveBeenCalled();
+          const permissionEvent = deviceUpdateMock.mock.calls[0][0];
           expect(
             permissionEvent["swrve.permission.web.push_notifications"]
           ).toBeDefined();
