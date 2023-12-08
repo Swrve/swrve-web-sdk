@@ -43,7 +43,7 @@ const webApiKeyCallback = (key: string, autoSubscribe: boolean) => {
     SwrveSDK.registerPush();
   } else {
     SwrveLogger.debug(
-      "SwrvePushManager Will not initialize. Auto subscribe is disabled"
+      "SwrvePushManager Will not register for push. Auto subscribe is disabled"
     );
   }
 };
@@ -202,6 +202,11 @@ export class SwrveSDK {
   //*************************************** Lifecycle Management ************************************//
 
   public static shutdown(): void {
+    // ensure the background thread is closed for push event sync loop
+    if (this._swrvePushManager) {
+      this._swrvePushManager.shutdown();
+    }
+
     SwrveSDK.checkCoreInstance().shutdown();
 
     _swrveCoreSDK = null;
@@ -301,8 +306,8 @@ export class SwrveSDK {
   //**************************************** Push Management ****************************//
 
   public static initializePushManager(webPushApiKey: string): void {
-    SwrveSDK.checkCoreInstance();
-    this._swrvePushManager.init(webPushApiKey);
+    const userId = SwrveSDK.checkCoreInstance().getUserId();
+    this._swrvePushManager.init(webPushApiKey, userId);
   }
 
   public static getPushManager(): SwrvePushManager {

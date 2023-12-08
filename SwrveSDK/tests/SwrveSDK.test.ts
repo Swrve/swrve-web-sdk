@@ -21,7 +21,7 @@ describe("SwrveSDK", () => {
   });
 
   describe("createInstance", () => {
-    beforeEach(() => {
+    afterEach(() => {
       SwrveSDK.shutdown();
     });
 
@@ -99,7 +99,7 @@ describe("SwrveSDK", () => {
     });
 
     it("must be the correct value", () => {
-      expect(SwrveSDK.getSDKVersion()).toBe("Web 2.1.0");
+      expect(SwrveSDK.getSDKVersion()).toBe("Web 2.2.0");
     });
   });
 

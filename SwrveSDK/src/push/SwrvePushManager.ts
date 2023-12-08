@@ -1,5 +1,6 @@
 import { ISwrveSDKConfig } from "../interfaces/ISwrveSDKConfig";
 import {SwrveSDK} from "../SwrveSDK";
+import { IPushEvent } from "@swrve/web-core";
 import { base64UrlToUint8Array } from "../util/Array";
 import { isNil, isPresent, noOp } from "../util/Nil";
 import SwrveLogger from "../util/SwrveLogger";
@@ -12,8 +13,11 @@ export const serviceWorkerEventTypes = {
 
 class SwrvePushManager {
   private _isInitialized: boolean = false;
+  private _eventFlushFreqency: number = 30000;
+  private _pushEventLoopTimer: any;
   private _webPushToken: string;
   private _webPushApiKey: string;
+  private _userId: string;
   private _config: ISwrveSDKConfig;
   private callBackPushReceived: (event: any) => void;
   private callBackPushClicked: (event: any) => void;
@@ -39,7 +43,7 @@ class SwrvePushManager {
     return this._webPushApiKey;
   }
 
-  public init(webPushApiKey: string) {
+  public init(webPushApiKey: string, userId: string) {
     if (this.IsInitialized) {
       SwrveLogger.debug("SwrvePushManager :: Already Initialized");
       return;
@@ -51,150 +55,120 @@ class SwrvePushManager {
     }
 
     this._webPushApiKey = webPushApiKey;
+    this._userId = userId;
     this._isInitialized = true;
+    // On initialisation check that a service worker is registered; on app
+    // launch this might not yet be registered unless register has been called.
+    navigator.serviceWorker.getRegistration(this._config.serviceWorker)
+                           .then((existingSubscription) => {
+                              // There is no subscription, user has likly unregistered or
+                              // never registered for push.
+                              if (isNil(existingSubscription)) { return; }
+
+                              this.syncServiceWorkerThread();
+                              this.registerPushListeners();
+                           }).catch(error => {
+                              SwrveLogger.warn(`Push registration not found; unable to sync with worker.\n ${error}`);
+                           });
   }
 
-  public registerPush(
+  public async registerPush(
     onSuccess: () => void = noOp,
     onFailure: (err: Error) => void = noOp
-  ) {
+  ): Promise<void> {
+    if (!this.isPushSupported()) {
+      /* Unsupported browser: exiting quietly */
+      return;
+    }
+
+    try {
+      SwrveLogger.debug(`Registering service worker: ${this._config.serviceWorker}`);
+      const registration = await navigator.serviceWorker.register(this._config.serviceWorker)
+      SwrveLogger.debug("Installing and registering...", registration);
+
+      const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+      const existingSubscription = await serviceWorkerRegistration.pushManager.getSubscription();
+
+      if (isNil(existingSubscription)) {
+        SwrveLogger.debug("Attempting to subscribe to push");
+
+        const keyArray = base64UrlToUint8Array(this.WebPushApiKey);
+        const options = {
+          applicationServerKey: keyArray,
+          userVisibleOnly: this._config.userVisibleOnly,
+        };
+
+        const newSubscription = await serviceWorkerRegistration.pushManager.subscribe(options);
+        this.sendPushRegistrationProperties(newSubscription);
+
+        SwrveLogger.debug("Subscribed Successfully");
+      } else {
+        SwrveLogger.debug("Already subscribed to push");
+        this.sendPushRegistrationProperties(existingSubscription);
+      }
+      this.syncServiceWorkerThread();
+      this.registerPushListeners();
+      onSuccess();
+    } catch (error) {
+      SwrveLogger.error("Error during registration and subscription", error);
+      onFailure(error);
+    }
+  }
+
+  public async unregisterPush(
+    onSuccess: () => void = noOp,
+    onFailure: (err: Error) => void = noOp
+  ): Promise<void> {
     if (!this.isPushSupported()) {
       // ** Unsupported browser: exiting quietly */
       return;
     }
     this.check();
 
-    navigator.serviceWorker
-      .register(this._config.serviceWorker)
-      .then((serviceWorkerRegistration) => {
-        SwrveLogger.debug(
-          `Registering service worker: ${this._config.serviceWorker}`
-        );
-        SwrveLogger.debug("Registering..", serviceWorkerRegistration);
+    try {
+      const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration(this._config.serviceWorker);
+      const existingSubscription = await serviceWorkerRegistration.pushManager.getSubscription();
+      if (isNil(existingSubscription)) {
+        throw new Error("Could not unregister push. No subscription found");
+      }
 
-        serviceWorkerRegistration.pushManager
-          .getSubscription()
-          .then((existingSubscription) => {
-            if (isNil(existingSubscription)) {
-              SwrveLogger.debug("Attempting to subscribe to push");
-              const keyArray = base64UrlToUint8Array(this.WebPushApiKey);
-              const options = {
-                applicationServerKey: keyArray,
-                userVisibleOnly: this._config.userVisibleOnly,
-              };
+      await existingSubscription.unsubscribe();
+      await serviceWorkerRegistration.unregister();
 
-              serviceWorkerRegistration.pushManager
-                .subscribe(options)
-                .then((newSubscription) => {
-                  this.sendPushRegistrationProperties(newSubscription);
-                  SwrveLogger.debug("Subscribed Successfully");
-                  onSuccess();
-                })
-                .catch((error) => {
-                  SwrveLogger.error("Subscription to push failed", error);
-                  onFailure(error);
-                });
-            } else {
-              SwrveLogger.debug("Already subscribed to push");
-              this.sendPushRegistrationProperties(existingSubscription);
-              onSuccess();
-              return;
-            }
-          })
-          .catch((error) => {
-            SwrveLogger.error(
-              "Cannot get Push Subscription Information",
-              error
-            );
-            onFailure(error);
-          });
-      });
-    this.registerPushListeners();
+      this.shutdown();
+
+      onSuccess();
+    } catch (error) {
+      SwrveLogger.warn(`Could not unregister push. ${error}`);
+      onFailure(error);
+    }
   }
 
-  public unregisterPush(
-    onSuccess: () => void = noOp,
-    onFailure: (err: Error) => void = noOp
-  ) {
-    if (!this.isPushSupported()) {
-      // ** Unsupported browser: exiting quietly */
-      return;
+  public async syncServiceWorkerThread(): Promise<void> {
+    try {
+      SwrveLogger.debug("Syncing with service worker.")
+      let user = await this.setPushSession();
+      SwrveLogger.debug(`Push session started for user ${user}`);
+
+      clearInterval(this._pushEventLoopTimer); // remove any previously set flush threads
+
+      SwrveLogger.debug("Setting background thread for push events flusher.");
+      this._pushEventLoopTimer = setInterval(() => {
+        this.flushPushEventQueue()
+      }, this._eventFlushFreqency);
+    } catch (error) {
+      SwrveLogger.error('Error setting push session:', error);
     }
-    this.check();
-
-    navigator.serviceWorker.ready.then((serviceWorkerRegistration) => {
-      serviceWorkerRegistration.pushManager
-        .getSubscription()
-        .then((existingSubscription) => {
-          if (isNil(existingSubscription)) {
-            SwrveLogger.warn(
-              "Could not unregister push. No subscription found"
-            );
-            return;
-          }
-
-          existingSubscription
-            .unsubscribe()
-            .then(() => {
-              /** This part disables the service workers for this page, probably not necessary - UPDATE For whatever reason, if we don't do this the push goes stale and can't be resent.
-               * We can't leave this in long term
-               *  TODO: Investigate this
-               */
-              navigator.serviceWorker
-                .getRegistrations()
-                .then((registrations) => {
-                  for (const registration of registrations) {
-                    SwrveLogger.debug(
-                      "Unregistering from Service Worker",
-                      registration
-                    );
-                    registration.unregister();
-                  }
-                });
-              onSuccess();
-            })
-            .catch((error) => {
-              SwrveLogger.error("Error unsubscribing from push", error);
-              onFailure(error);
-            });
-        })
-        .catch((error) => {
-          SwrveLogger.error("Error fetching existing subscription", error);
-          onFailure(error);
-        });
-    });
   }
 
   public isPushSupported() {
     return "serviceWorker" in navigator && "PushManager" in window;
   }
 
-  public onPushReceived(event: any) {
-    SwrveLogger.debug("Notification Received");
-
-    if (isPresent(event.data) && isPresent(event.data.body.id)) {
-      SwrveSDK.checkCoreInstance().notificationDeliveredEvent(
-        event.data.body.id
-      );
+  public shutdown() {
+    if (this._pushEventLoopTimer) {
+      clearInterval(this._pushEventLoopTimer);
     }
-
-    return this.callBackPushReceived(event);
-  }
-
-  public onPushClicked(event: any): void {
-    SwrveLogger.debug(`Notification Clicked \n${event}`);
-
-    if (isPresent(event.data) && isPresent(event.data.body.id)) {
-      SwrveSDK.checkCoreInstance().notificationEngagedEvent(event.data.body.id);
-    }
-
-    return this.callBackPushClicked(event);
-  }
-
-  public onPushClosed(event: any): void {
-    SwrveLogger.debug("Notification Closed");
-
-    return this.callBackPushClosed(event);
   }
 
   private registerPushListeners(): void {
@@ -218,13 +192,13 @@ class SwrvePushManager {
     }
     switch (data.type) {
       case serviceWorkerEventTypes.swrvePushReceived:
-        this.onPushReceived(event);
+        this.callBackPushReceived(event);
         break;
       case serviceWorkerEventTypes.swrvePushNotificationClicked:
-        this.onPushClicked(event);
+        this.callBackPushClicked(event);
         break;
       case serviceWorkerEventTypes.swrvePushNotificationClosed:
-        this.onPushClosed(event);
+        this.callBackPushClosed(event);
         break;
     }
   }
@@ -273,12 +247,79 @@ class SwrvePushManager {
     }
   }
 
-  private static sendPermissionsUpdate(state: string) {
-    SwrveSDK.checkCoreInstance().deviceUpdate({ "swrve.permission.web.push_notifications": state })
+  private async flushPushEventQueue() {
+    try {
+      const events: IPushEvent[] = await this.fetchPushEvents();
+      if (events.length > 0) {
+        SwrveLogger.debug(`Flushing push events: ${events}`)
+        SwrveSDK.checkCoreInstance().enqueuePushEvents(events);
+      }
+    } catch (error) {
+      SwrveLogger.error('Error fetching or processing push events:', error);
+    }
+  }
+
+  private fetchPushEvents(): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (!this.isPushSupported()) {
+          throw new Error('Failed to fetch push data, push is not supported!');
+        }
+        this.check();
+
+        const registration = await navigator.serviceWorker.ready;
+        const messageChannel = new MessageChannel();
+
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data && event.data.type === 'pushData') {
+            resolve(event.data.data);
+          }
+        };
+
+        registration.active.postMessage({
+          type: 'fetchPushData',
+          user_id: this._userId,
+          port: messageChannel.port2,
+        }, [messageChannel.port2]);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  private setPushSession(): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (!this.isPushSupported()) {
+          throw new Error('Failed to fetch push data, push is not supported!');
+        }
+        this.check();
+
+        const registration = await navigator.serviceWorker.ready;
+        const messageChannel = new MessageChannel();
+
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data && event.data.type === 'userSession') {
+            resolve(event.data.data);
+          }
+        };
+
+        registration.active.postMessage({
+          type: 'setUserSession',
+          user_id: this._userId,
+        }, [messageChannel.port2]);
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   private browserHasPermissionsAccess(): boolean {
     return navigator.permissions !== undefined;
+  }
+
+  private static sendPermissionsUpdate(state: string) {
+    SwrveSDK.checkCoreInstance().deviceUpdate({ "swrve.permission.web.push_notifications": state })
   }
 }
 

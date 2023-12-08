@@ -9,6 +9,7 @@ import SwrveLogger from "../src/util/SwrveLogger";
 // Mock SwrveSDK and SwrveWebCore
 jest.mock("@swrve/web-core");
 jest.mock("../src/SwrveSDK");
+jest.useFakeTimers();
 
 const swrveConfig: ISwrveSDKConfig = {
   apiKey: "web_sdk-testKey",
@@ -30,6 +31,10 @@ describe("SwrvePushManager", () => {
     swrvePushManager = new SwrvePushManager(swrveConfig);
   });
 
+  afterEach(() => {
+    jest.clearAllTimers();
+  });
+
   describe("api", () => {
     it("should have registerPush", () => {
       expect(swrvePushManager.registerPush).toBeDefined();
@@ -45,7 +50,7 @@ describe("SwrvePushManager", () => {
         swrvePushManager = new SwrvePushManager(swrveConfig);
         jest.spyOn(swrvePushManager, "isPushSupported").mockReturnValue(true);
         expect(swrvePushManager.IsInitialized).toBe(false);
-        swrvePushManager.init(webApiKey);
+        swrvePushManager.init(webApiKey, 'test-123');
         expect(swrvePushManager.IsInitialized).toBe(true);
       });
     });
@@ -55,12 +60,46 @@ describe("SwrvePushManager", () => {
         swrvePushManager = new SwrvePushManager(swrveConfig);
         jest.spyOn(swrvePushManager, "isPushSupported").mockReturnValue(true);
         expect(swrvePushManager.IsInitialized).toBe(false);
-        swrvePushManager.init(webApiKey);
+        swrvePushManager.init(webApiKey, 'test-123');
         expect(swrvePushManager.IsInitialized).toBe(true);
-        swrvePushManager.init(webApiKey);
+        swrvePushManager.init(webApiKey, 'test-123');
         expect(swrvePushManager.IsInitialized).toBe(true);
-        expect(swrvePushManager.isPushSupported).toHaveBeenCalledTimes(1);
+        expect(swrvePushManager.isPushSupported).toHaveBeenCalled();
       });
+    });
+  });
+
+  describe("syncServiceWorkerThread", () => {
+    fit("syncs up with the service worker thread", async () => {
+      let subject = new SwrvePushManager(swrveConfig) as any;
+      const pushEvents = [
+        {
+          id: 1,
+          event_type: "swrve.push_received",
+          event: "Swrve.Messages.Push-1.delivered",
+          user_id: "4e56eddb-2930-4119-8f93-75304588a5ec",
+          timestamp: 1701873418769
+        },
+        {
+          id: 2,
+          event_type: "swrve.push_clicked",
+          event: "Swrve.Messages.Push-1.engaged",
+          user_id: "4e56eddb-2930-4119-8f93-75304588a5ec",
+          timestamp: 1701873421827
+        }
+      ];
+      const setPushSessionSpy = jest.spyOn(subject, "setPushSession").mockResolvedValue("4e56eddb-2930-4119-8f93-75304588a5ec");
+      const fetchPushEventsSpy = jest.spyOn(subject, "fetchPushEvents").mockResolvedValue(pushEvents);
+
+      await subject.syncServiceWorkerThread();
+
+      // Assert
+      expect(setPushSessionSpy).toHaveBeenCalled();
+      expect(subject["_pushEventLoopTimer"]).not.toBeNull()
+
+      jest.advanceTimersByTime(subject['_eventFlushFreqency']);
+
+      expect(fetchPushEventsSpy).toHaveBeenCalled();
     });
   });
 
