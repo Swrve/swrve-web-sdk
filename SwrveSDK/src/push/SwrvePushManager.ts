@@ -60,13 +60,23 @@ class SwrvePushManager {
     // On initialisation check that a service worker is registered; on app
     // launch this might not yet be registered unless register has been called.
     navigator.serviceWorker.getRegistration(this._config.serviceWorker)
-                           .then((existingSubscription) => {
+                           .then((existingRegistration) => {
                               // There is no subscription, user has likly unregistered or
                               // never registered for push.
-                              if (isNil(existingSubscription)) { return; }
-
+                              if (isNil(existingRegistration)) { return; }
+                              
                               this.syncServiceWorkerThread();
                               this.registerPushListeners();
+                              
+                              existingRegistration.pushManager.getSubscription().then((existingSubscription) => {
+                                if (existingSubscription) {
+                                  this.sendPushRegistrationProperties(existingSubscription);
+                                } else {
+                                  this.sendBrowserPermissions();
+                                }
+                              }).catch(error => {
+                                SwrveLogger.warn(`Error sending in subscription properties.\n ${error}`);
+                              });
                            }).catch(error => {
                               SwrveLogger.warn(`Push registration not found; unable to sync with worker.\n ${error}`);
                            });
@@ -222,10 +232,10 @@ class SwrvePushManager {
     );
     SwrveLogger.debug("sending push subscription", subscription);
     SwrveSDK.checkCoreInstance().deviceUpdate({ "swrve.web_push_token": this._webPushToken })
-    this.sendBrowserPermissions(pushSubscription);
+    this.sendBrowserPermissions();
   }
 
-  private async sendBrowserPermissions(pushSubscription: PushSubscription) {
+  private async sendBrowserPermissions() {
     if (this.browserHasPermissionsAccess()) {
       await navigator.permissions
         .query({ name: "notifications" })
