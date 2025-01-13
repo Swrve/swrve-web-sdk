@@ -539,10 +539,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@swrve/web-core@1.3.0":
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.3.0.tgz#b832858ff264c4bda017e91a124505ea83968b03"
-  integrity sha512-xss2nnpd1QDim0TFKc7rvvA1kBWRTUgycLaThJR52hO+1s+KwbHERXEX55nUJCUBE5lehmr0wSsqB2pKQhkMLA==
+"@swrve/web-core@1.4.0":
+  version "1.4.0"
+  resolved "https://registry.npmjs.org/@swrve/web-core/-/web-core-1.4.0.tgz#0e9310151336d1bf1a5e6219ece67a2e8e9c2af5"
+  integrity sha512-kbKgyuP0XjhkjxEG4ZP8FDnTh1Xyk5uwmqH3B+gOyRttN5iF10KyZb4WAH4pfMdI2nKbfOCpovxwlaOqxMahjg==
   dependencies:
     "@types/crypto-js" "4.2.0"
     crypto-js "4.2.0"

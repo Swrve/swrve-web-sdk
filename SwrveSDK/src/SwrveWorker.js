@@ -3,32 +3,38 @@ const EVENT_TYPES = {
   swrvePushNotificationClosed: "swrve.push_closed",
   swrvePushReceived: "swrve.push_received",
 };
-const DB_NAME = 'swrve_push_events_db';
-const PUSH_DATA_STORE_NAME = 'swrve_push_events';
-const USERS_STORE_NAME = 'swrve_users'
-const NOTIFICATION_PROPERTIES = ['body', 'image', 'icon', 'payload'];
+const DB_NAME = "swrve_push_events_db";
+const PUSH_DATA_STORE_NAME = "swrve_push_events";
+const USERS_STORE_NAME = "swrve_users";
+const NOTIFICATION_PROPERTIES = ["body", "image", "icon", "payload"];
 
 function initDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
 
-    request.onupgradeneeded = event => {
+    request.onupgradeneeded = (event) => {
       const db = event.target.result;
 
       // Create the current_users store with an index for last active
-      const usersStore = db.createObjectStore(USERS_STORE_NAME, { keyPath: 'user_id', autoIncrement: false });
-      usersStore.createIndex('last_active', 'last_active', { unique: false });
+      const usersStore = db.createObjectStore(USERS_STORE_NAME, {
+        keyPath: "user_id",
+        autoIncrement: false,
+      });
+      usersStore.createIndex("last_active", "last_active", { unique: false });
 
       // Create the push_data store with an index on user_id
-      const pushDataStore = db.createObjectStore(PUSH_DATA_STORE_NAME, { keyPath: 'id', autoIncrement: true });
-      pushDataStore.createIndex('user_id', 'user_id', { unique: false });
+      const pushDataStore = db.createObjectStore(PUSH_DATA_STORE_NAME, {
+        keyPath: "id",
+        autoIncrement: true,
+      });
+      pushDataStore.createIndex("user_id", "user_id", { unique: false });
     };
 
-    request.onsuccess = event => {
+    request.onsuccess = (event) => {
       resolve(event.target.result);
     };
 
-    request.onerror = event => {
+    request.onerror = (event) => {
       reject(new Error(`Failed to open database: ${event.target.error}`));
     };
   });
@@ -37,11 +43,11 @@ function initDatabase() {
 async function getCurrentUser() {
   try {
     const db = await initDatabase();
-    const transaction = db.transaction(USERS_STORE_NAME, 'readonly');
+    const transaction = db.transaction(USERS_STORE_NAME, "readonly");
     const store = transaction.objectStore(USERS_STORE_NAME);
-    const index = store.index('last_active');
+    const index = store.index("last_active");
 
-    const getRequest = index.openCursor(null, 'prev');
+    const getRequest = index.openCursor(null, "prev");
 
     let currentUser = null;
 
@@ -51,14 +57,16 @@ async function getCurrentUser() {
         currentUser = cursor.value;
         db.close();
       } else {
-        throw new Error('No user found');
+        throw new Error("No user found");
       }
     };
 
     return new Promise((resolve, reject) => {
       getRequest.onerror = (event) => {
         db.close();
-        reject(new Error(`Failed to retrieve current user: ${event.target.error}`));
+        reject(
+          new Error(`Failed to retrieve current user: ${event.target.error}`)
+        );
       };
 
       transaction.oncomplete = () => resolve(currentUser);
@@ -71,7 +79,7 @@ async function getCurrentUser() {
 async function storePushEventData(pushEvent) {
   try {
     const db = await initDatabase();
-    const transaction = db.transaction(PUSH_DATA_STORE_NAME, 'readwrite');
+    const transaction = db.transaction(PUSH_DATA_STORE_NAME, "readwrite");
     const store = transaction.objectStore(PUSH_DATA_STORE_NAME);
 
     const pushEventObject = { ...pushEvent, timestamp: Date.now() };
@@ -97,9 +105,9 @@ async function storePushEventData(pushEvent) {
 async function getPushDataByUserId(userId) {
   try {
     const db = await initDatabase();
-    const transaction = db.transaction(PUSH_DATA_STORE_NAME, 'readonly');
+    const transaction = db.transaction(PUSH_DATA_STORE_NAME, "readonly");
     const store = transaction.objectStore(PUSH_DATA_STORE_NAME);
-    const index = store.index('user_id');
+    const index = store.index("user_id");
 
     const getRequest = index.getAll(userId);
 
@@ -115,7 +123,9 @@ async function getPushDataByUserId(userId) {
 
       getRequest.onerror = (event) => {
         db.close();
-        reject(new Error(`Failed to retrieve push data: ${event.target.error}`));
+        reject(
+          new Error(`Failed to retrieve push data: ${event.target.error}`)
+        );
       };
     });
   } catch (error) {
@@ -126,7 +136,7 @@ async function getPushDataByUserId(userId) {
 async function setCurrentUser(user) {
   try {
     const db = await initDatabase();
-    const transaction = db.transaction(USERS_STORE_NAME, 'readwrite');
+    const transaction = db.transaction(USERS_STORE_NAME, "readwrite");
     const store = transaction.objectStore(USERS_STORE_NAME);
 
     // Check if the user_id already exists in the store
@@ -136,7 +146,7 @@ async function setCurrentUser(user) {
       record.last_active = now;
       store.put(record);
     } else {
-      record = {...user, last_active: now}
+      record = { ...user, last_active: now };
       store.add(record);
     }
 
@@ -148,7 +158,9 @@ async function setCurrentUser(user) {
 
       transaction.onerror = (event) => {
         db.close();
-        reject(new Error(`Failed to store current user: ${event.target.error}`));
+        reject(
+          new Error(`Failed to store current user: ${event.target.error}`)
+        );
       };
     });
   } catch (error) {
@@ -165,7 +177,7 @@ async function getUserRecord(store, userId) {
     };
 
     getRequest.onerror = () => {
-      reject(new Error('Failed to get user record'));
+      reject(new Error("Failed to get user record"));
     };
   });
 }
@@ -173,15 +185,17 @@ async function getUserRecord(store, userId) {
 async function deletePushDataByUserId(userId) {
   try {
     const db = await initDatabase();
-    const transaction = db.transaction(PUSH_DATA_STORE_NAME, 'readwrite');
+    const transaction = db.transaction(PUSH_DATA_STORE_NAME, "readwrite");
     const store = transaction.objectStore(PUSH_DATA_STORE_NAME);
-    const index = store.index('user_id');
+    const index = store.index("user_id");
 
     const getRequest = index.getAll(userId);
 
     getRequest.onsuccess = (event) => {
       const pushData = event.target.result;
-      pushData.forEach((data) => { store.delete(data.id); });
+      pushData.forEach((data) => {
+        store.delete(data.id);
+      });
       db.close();
     };
   } catch (error) {
@@ -196,13 +210,15 @@ function buildNotification(pushData) {
         title: pushData.data.swrve.title,
         p: pushData.data.swrve._p,
         sd: pushData.data.swrve._sd,
+        td: pushData.data.swrve._td,
+        smp: pushData.data.swrve._smp,
       },
     },
   };
 
-  NOTIFICATION_PROPERTIES.forEach(prop => {
+  NOTIFICATION_PROPERTIES.forEach((prop) => {
     if (pushData[prop]) {
-      const target = prop === 'payload' ? notification.data : notification;
+      const target = prop === "payload" ? notification.data : notification;
       target[prop] = pushData[prop];
     }
   });
@@ -235,25 +251,37 @@ function sendClientMessage(event, type, body) {
 }
 
 self.addEventListener("push", (event) => {
-  if (!event.data) { return; } // No data, nothing to process
+  if (!event.data) {
+    return;
+  } // No data, nothing to process
 
   const pushData = event.data.json();
 
-  if (!pushData.data.swrve || !pushData.data.swrve._p) { return; } // Invalid or missing Swrve data
+  if (!pushData.data.swrve || !pushData.data.swrve._p) {
+    return;
+  } // Invalid or missing Swrve data
 
   const notification = buildNotification(pushData);
   event.waitUntil(
     (async () => {
       try {
         const currentUser = await getCurrentUser();
+        const evt = `Swrve.Messages.Push-${pushData.data.swrve._p}.delivered`;
+        const payload = pushData.data.swrve._td
+          ? {
+              trackingData: pushData.data.swrve._td,
+              platfom: pushData.data.swrve._smp,
+            }
+          : {};
         await storePushEventData({
           event_type: EVENT_TYPES.swrvePushReceived,
-          event: `Swrve.Messages.Push-${pushData.data.swrve._p}.delivered`,
+          event: evt,
+          payload,
           timestamp: Date.now(),
-          user_id: currentUser.user_id
+          user_id: currentUser.user_id,
         });
       } catch (error) {
-        console.error('Error storing push event data', error);
+        console.error("Error storing push event data", error);
       }
 
       // always follow through with the action regardless of errors above
@@ -266,7 +294,7 @@ self.addEventListener("push", (event) => {
         self.registration.showNotification(
           notification.data.swrve.title,
           notification
-        )
+        ),
       ]);
     })()
   );
@@ -290,14 +318,22 @@ self.addEventListener("notificationclick", (event) => {
     (async () => {
       try {
         const currentUser = await getCurrentUser();
+        const evt = `Swrve.Messages.Push-${bodyPayload.id}.engaged`;
+        const payload = event.notification.data.swrve.td
+          ? {
+              trackingData: event.notification.data.swrve.td,
+              platfom: event.notification.data.swrve.smp,
+            }
+          : {};
         await storePushEventData({
           event_type: EVENT_TYPES.swrvePushNotificationClicked,
-          event: `Swrve.Messages.Push-${bodyPayload.id}.engaged`,
+          event: evt,
+          payload,
           timestamp: Date.now(),
-          user_id: currentUser.user_id
+          user_id: currentUser.user_id,
         });
       } catch (error) {
-        console.error('Error storing push event data:', error);
+        console.error("Error storing push event data:", error);
       }
 
       // always follow through with the action regardless of errors above
@@ -309,7 +345,7 @@ self.addEventListener("notificationclick", (event) => {
             EVENT_TYPES.swrvePushNotificationClicked,
             bodyPayload
           );
-        })
+        }),
       ]);
     })()
   );
@@ -330,18 +366,18 @@ self.addEventListener("install", function (event) {
   self.skipWaiting();
 });
 
-self.addEventListener('message', async (event) => {
+self.addEventListener("message", async (event) => {
   try {
     if (event.data) {
       switch (event.data.type) {
-        case 'setUserSession':
+        case "setUserSession":
           const user = await setCurrentUser({ user_id: event.data.user_id });
-          event.ports[0].postMessage({ type: 'userSession', data: user });
+          event.ports[0].postMessage({ type: "userSession", data: user });
           break;
 
-        case 'fetchPushData':
+        case "fetchPushData":
           const pushData = await getPushDataByUserId(event.data.user_id);
-          event.ports[0].postMessage({ type: 'pushData', data: pushData });
+          event.ports[0].postMessage({ type: "pushData", data: pushData });
 
           if (pushData.length > 0) {
             await deletePushDataByUserId(event.data.user_id);
