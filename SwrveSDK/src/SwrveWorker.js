@@ -250,7 +250,7 @@ function sendClientMessage(event, type, body) {
   });
 }
 
-self.addEventListener("push", (event) => {
+self.addEventListener("push", async (event) => {
   if (!event.data) {
     return;
   } // No data, nothing to process
@@ -261,41 +261,79 @@ self.addEventListener("push", (event) => {
     return;
   } // Invalid or missing Swrve data
 
-  const notification = buildNotification(pushData);
+  // Extract the targeted user ID (_aui) from push payload
+  const targetedUserId = pushData.data.swrve._aui;
+
+  let displayed = true;
+  let reason = "";
+
+  // Fetch the current user once and handle errors early
+  let currentUser;
+  try {
+    currentUser = await getCurrentUser();
+  } catch (error) {
+    console.error("Error fetching current user:", error);
+    return;
+  }
+
+  // Check if the push is targeted at a specific user
+  if (targetedUserId && currentUser && currentUser.user_id !== targetedUserId) {
+    console.warn(
+      "Swrve received authenticated push targeted for a different user. Suppressing notification."
+    );
+    displayed = false;
+    reason = "different_user";
+  }
+
   event.waitUntil(
     (async () => {
       try {
-        const currentUser = await getCurrentUser();
         const evt = `Swrve.Messages.Push-${pushData.data.swrve._p}.delivered`;
-        const payload = pushData.data.swrve._td
-          ? {
-              trackingData: pushData.data.swrve._td,
-              platfom: pushData.data.swrve._smp,
-            }
-          : {};
+        const payload = {
+          displayed: displayed,
+          reason: reason
+        };
+        
+        if (pushData.data.swrve._td != null) {
+          payload.trackingData = pushData.data.swrve._td;
+        }
+        
+        if (pushData.data.swrve._smp != null) {
+          payload.platform = pushData.data.swrve._smp;
+        }
         await storePushEventData({
           event_type: EVENT_TYPES.swrvePushReceived,
           event: evt,
           payload,
           timestamp: Date.now(),
           user_id: currentUser.user_id,
+          displayed: displayed,
+          reason: reason,
         });
+
+        // Notify the client that a push was received, even if not displayed
+        await sendClientMessage(event, EVENT_TYPES.swrvePushReceived, {
+          id: pushData.data.swrve._p,
+          displayed: displayed,
+          reason: reason,
+        });
+
       } catch (error) {
         console.error("Error storing push event data", error);
       }
 
-      // always follow through with the action regardless of errors above
-      await Promise.all([
-        new Promise(() => {
-          sendClientMessage(event, EVENT_TYPES.swrvePushReceived, {
-            id: pushData.data.swrve._p,
-          });
-        }),
-        self.registration.showNotification(
-          notification.data.swrve.title,
-          notification
-        ),
-      ]);
+      // Only show the notification if it was not suppressed
+      if (displayed) {
+        try {
+          const notification = buildNotification(pushData);
+          await self.registration.showNotification(
+            notification.data.swrve.title,
+            notification
+          );
+        } catch (error) {
+          console.error("Error displaying notification:", error);
+        }
+      }
     })()
   );
 });

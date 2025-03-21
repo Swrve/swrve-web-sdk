@@ -66,6 +66,10 @@ export class SwrveSDK {
   }
 
   public static createInstance(config: ISwrveSDKConfig): SwrveSDK {
+    if (config.apiKey.toLowerCase().startsWith("secret-")) {
+      throw Error(`API Key ${config.apiKey} is invalid. It should not start with 'secret-'`);
+    }
+
     if (SwrveSDK._instance) return SwrveSDK._instance;
 
     const errors: IValidateError | void =
@@ -301,6 +305,10 @@ export class SwrveSDK {
 
   public static markMessageCenterCampaignAsSeen(campaign: ISwrveCampaign) {
     SwrveSDK.checkCoreInstance().markMessageCenterCampaignAsSeen(campaign);
+  }
+
+  public static removeMessageCenterCampaign(campaign: ISwrveCampaign) {
+    SwrveSDK.checkCoreInstance().removeMessageCenterCampaign(campaign);
   }
 
   //**************************************** Push Management ****************************//

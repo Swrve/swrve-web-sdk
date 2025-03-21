@@ -1,4 +1,4 @@
-import { IAsset, IDictionary } from "@swrve/web-core";
+import { IAsset, IDictionary, ISwrveAsset } from "@swrve/web-core";
 import { IKeyMapping } from "@swrve/web-core";
 import {
   DevicePropertyName,
@@ -277,6 +277,19 @@ export default class WebPlatformBridge implements IPlatform {
     });
 
     return Promise.all(downloading).then(() => void 0);
+  }
+
+  public checkStorageForAsset(asset: ISwrveAsset): boolean {
+    const loadedImage = document.createElement("img");
+    loadedImage.src = asset.getAssetPath().toString();
+    const element = document.getElementById("PALImageCache");
+    if (element) {
+      element.appendChild(loadedImage);
+    } else {
+      console.log("PALImage Cache does not exist");
+    }
+
+    return loadedImage.complete || loadedImage.width + loadedImage.height > 0;
   }
 
   public openLink(link: string): void {

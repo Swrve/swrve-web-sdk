@@ -219,9 +219,38 @@ class SwrvePushManager {
     }
   }
 
+  private validatePushSubscription(pushSubscription: PushSubscription): boolean {
+    if (!pushSubscription) {
+      SwrveLogger.error("Invalid pushSubscription: pushSubscription is null or undefined");
+      return false;
+    }
+  
+    if (!pushSubscription.endpoint) {
+      SwrveLogger.error("Invalid pushSubscription: endpoint is missing");
+      return false;
+    }
+  
+    const authKey = pushSubscription.getKey("auth");
+    if (!authKey) {
+      SwrveLogger.error("Invalid pushSubscription: auth key is missing");
+      return false;
+    }
+
+    const p256dhKey = pushSubscription.getKey("p256dh");
+    if (!p256dhKey) {
+      SwrveLogger.error("Invalid pushSubscription: p256dh key are missing");
+      return false;
+    }
+    return true;
+  }
+
   private sendPushRegistrationProperties(
     pushSubscription: PushSubscription
   ): void {
+    if (!this.validatePushSubscription(pushSubscription)) {
+      return;
+    }
+
     const subscription = pushSubscription.toJSON();
     const auth = subscription.keys.auth;
     const p256dh = subscription.keys.p256dh;

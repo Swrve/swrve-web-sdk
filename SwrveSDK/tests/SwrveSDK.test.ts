@@ -89,6 +89,19 @@ describe("SwrveSDK", () => {
         });
       }).toThrowError();
     });
+
+    it("fails on secret-", () => {
+      const coreInstance = jest.fn();
+      SwrveCoreSDK.createInstance = coreInstance;
+
+      expect(() => {
+        SwrveSDK.createInstance({ 
+          appId: 12345, 
+          apiKey: "secret-1234", 
+          externalUserId: "testUser",
+        });
+      }).toThrowError();
+    });
   });
 
   // --- Accessor Methods ---
@@ -99,7 +112,7 @@ describe("SwrveSDK", () => {
     });
 
     it("must be the correct value", () => {
-      expect(SwrveSDK.getSDKVersion()).toBe("Web 2.4.0");
+      expect(SwrveSDK.getSDKVersion()).toBe("Web 2.5.0");
     });
   });
 
@@ -423,6 +436,19 @@ describe("SwrveSDK", () => {
       const coreCall = jest.fn();
       SwrveCoreSDK.markMessageCenterCampaignAsSeen = coreCall;
       SwrveSDK.markMessageCenterCampaignAsSeen({} as ISwrveCampaign); //doesn't matter if it's empty
+      expect(coreCall.mock.calls.length).toBe(1);
+    });
+  });
+
+  describe("removeMessageCenterCampaign", () => {
+    it("must be defined", () => {
+      expect(SwrveSDK.removeMessageCenterCampaign).toBeDefined();
+    });
+
+    it("must make the appropriate call to core", () => {
+      const coreCall = jest.fn();
+      SwrveCoreSDK.removeMessageCenterCampaign = coreCall;
+      SwrveSDK.removeMessageCenterCampaign({} as ISwrveCampaign); //doesn't matter if it's empty
       expect(coreCall.mock.calls.length).toBe(1);
     });
   });
