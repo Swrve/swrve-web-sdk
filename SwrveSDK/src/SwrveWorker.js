@@ -223,6 +223,12 @@ function buildNotification(pushData) {
     }
   });
 
+  // Ensure an icon is set
+  if (!notification.icon || notification.icon === "") {
+    if (notification.image && notification.image !== "") {
+      notification.icon = notification.image;
+    }
+  }
   return notification;
 }
 
@@ -261,43 +267,42 @@ self.addEventListener("push", async (event) => {
     return;
   } // Invalid or missing Swrve data
 
-  // Extract the targeted user ID (_aui) from push payload
-  const targetedUserId = pushData.data.swrve._aui;
-
-  let displayed = true;
-  let reason = "";
-
-  // Fetch the current user once and handle errors early
-  let currentUser;
-  try {
-    currentUser = await getCurrentUser();
-  } catch (error) {
-    console.error("Error fetching current user:", error);
-    return;
-  }
-
-  // Check if the push is targeted at a specific user
-  if (targetedUserId && currentUser && currentUser.user_id !== targetedUserId) {
-    console.warn(
-      "Swrve received authenticated push targeted for a different user. Suppressing notification."
-    );
-    displayed = false;
-    reason = "different_user";
-  }
-
   event.waitUntil(
     (async () => {
+      // Extract the targeted user ID (_aui) from push payload
+      const targetedUserId = pushData.data.swrve._aui;
+
+      let displayed = true;
+      let reason = "";
+
+      // Fetch the current user once and handle errors early
+      let currentUser;
+      try {
+        currentUser = await getCurrentUser();
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+        return;
+      }
+
+      // Check if the push is targeted at a specific user
+      if (targetedUserId && currentUser && currentUser.user_id !== targetedUserId) {
+        console.warn(
+          "Swrve received authenticated push targeted for a different user. Suppressing notification."
+        );
+        displayed = false;
+        reason = "different_user";
+      }
       try {
         const evt = `Swrve.Messages.Push-${pushData.data.swrve._p}.delivered`;
         const payload = {
           displayed: displayed,
           reason: reason
         };
-        
+
         if (pushData.data.swrve._td != null) {
           payload.trackingData = pushData.data.swrve._td;
         }
-        
+
         if (pushData.data.swrve._smp != null) {
           payload.platform = pushData.data.swrve._smp;
         }
@@ -359,9 +364,9 @@ self.addEventListener("notificationclick", (event) => {
         const evt = `Swrve.Messages.Push-${bodyPayload.id}.engaged`;
         const payload = event.notification.data.swrve.td
           ? {
-              trackingData: event.notification.data.swrve.td,
-              platfom: event.notification.data.swrve.smp,
-            }
+            trackingData: event.notification.data.swrve.td,
+            platfom: event.notification.data.swrve.smp,
+          }
           : {};
         await storePushEventData({
           event_type: EVENT_TYPES.swrvePushNotificationClicked,
