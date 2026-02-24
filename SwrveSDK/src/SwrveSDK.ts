@@ -283,6 +283,14 @@ export class SwrveSDK {
     );
   }
 
+  public static getEmbeddedMessageCenterCampaigns(
+    personalizationProperties?: IDictionary<string>
+  ): ISwrveEmbeddedMessage[] {
+    return SwrveSDK.checkCoreInstance().getEmbeddedMessageCenterCampaigns(
+      personalizationProperties
+    );
+  }
+
   //*************************************** Message Center ******************************//
 
   public static getMessageCenterCampaigns(

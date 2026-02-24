@@ -11,6 +11,8 @@ export const serviceWorkerEventTypes = {
   swrvePushReceived: "swrve.push_received",
 };
 
+const PUSH_PERMISSION_EVENT_KEY = "swrve.web.push.permission.event_state";
+
 class SwrvePushManager {
   private _isInitialized: boolean = false;
   private _eventFlushFreqency: number = 30000;
@@ -272,17 +274,17 @@ class SwrvePushManager {
           SwrveLogger.debug(
             `notifications permission status is  ${permissionStatus.state}`
           );
-          SwrvePushManager.sendPermissionsUpdate(permissionStatus.state);
-          permissionStatus.onchange = function () {
+          this.sendPermissionsUpdate(permissionStatus.state);
+          permissionStatus.onchange = () => {
             SwrveLogger.debug(
-              `notifications permission status has changed to ${this.state}`
+              `notifications permission status has changed to ${permissionStatus.state}`
             );
-            SwrvePushManager.sendPermissionsUpdate(this.state);
+            this.sendPermissionsUpdate(permissionStatus.state);
           };
         });
     } else {
       SwrveLogger.warn("notifications permission status is unknown");
-      SwrvePushManager.sendPermissionsUpdate("unknown");
+      this.sendPermissionsUpdate("unknown");
     }
   }
 
@@ -357,8 +359,36 @@ class SwrvePushManager {
     return navigator.permissions !== undefined;
   }
 
-  private static sendPermissionsUpdate(state: string) {
-    SwrveSDK.checkCoreInstance().deviceUpdate({ "swrve.permission.web.push_notifications": state })
+  private sendPermissionsUpdate(state: string) {
+    const sdk = SwrveSDK.checkCoreInstance();
+
+    sdk.deviceUpdate({
+      "swrve.permission.web.push_notifications": state,
+    });
+
+    if (typeof localStorage !== "undefined") {
+      // Event: only send if permission has changed
+      const lastEventState = localStorage.getItem(PUSH_PERMISSION_EVENT_KEY);
+
+      if (lastEventState === state) {
+        SwrveLogger.debug(
+          `Push permission event unchanged (${state}), skipping event`
+        );
+        return;
+      }
+
+      SwrveLogger.debug(
+        `Push permission event changed: ${lastEventState} → ${state}`
+      );
+    }
+
+    sdk.event(`Swrve.permission.web.push_notifications.${state}`);
+
+    try {
+      localStorage.setItem(PUSH_PERMISSION_EVENT_KEY, state);
+    } catch (e) {
+      SwrveLogger.warn("localStorage unavailable, permission event may re-fire", e);
+    }
   }
 }
 
