@@ -515,9 +515,14 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@swrve/web-core@link:../../../web-core-sdk/public/SwrveCoreSDK":
-  version "0.0.0"
-  uid ""
+"@swrve/web-core@1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.6.0.tgz#caa3412c8c60913a04ea939dd2b24e0c8b3d2f30"
+  integrity sha512-yfaq8TGqCp3YaHbqibDpP6qbMzmuratamuDuOe+JiMFc07flClE78erJbUmYE5DAr2bhZCxBMTmmVNQmafm6Rg==
+  dependencies:
+    "@types/crypto-js" "4.2.0"
+    "@webcomponents/custom-elements" "^1.5.0"
+    crypto-js "4.2.0"
 
 "@tootallnate/once@1":
   version "1.1.2"
@@ -2474,9 +2479,9 @@ mimic-fn@^2.1.0:
   integrity sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==
 
 minimatch@^3.0.4, minimatch@^3.1.1:
-  version "3.1.2"
-  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-3.1.2.tgz#19cd194bfd3e428f049a70817c038d89ab4be35b"
-  integrity sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-3.1.5.tgz#580c88f8d5445f2bd6aa8f3cadefa0de79fbd69e"
+  integrity sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==
   dependencies:
     brace-expansion "^1.1.7"
 
