@@ -515,9 +515,14 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@swrve/web-core@link:../../../web-core-sdk/public/SwrveCoreSDK":
-  version "0.0.0"
-  uid ""
+"@swrve/web-core@1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@swrve/web-core/-/web-core-1.6.0.tgz#caa3412c8c60913a04ea939dd2b24e0c8b3d2f30"
+  integrity sha512-yfaq8TGqCp3YaHbqibDpP6qbMzmuratamuDuOe+JiMFc07flClE78erJbUmYE5DAr2bhZCxBMTmmVNQmafm6Rg==
+  dependencies:
+    "@types/crypto-js" "4.2.0"
+    "@webcomponents/custom-elements" "^1.5.0"
+    crypto-js "4.2.0"
 
 "@tootallnate/once@1":
   version "1.1.2"
@@ -2611,9 +2616,9 @@ picocolors@^1.0.0, picocolors@^1.1.1:
   integrity sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==
 
 picomatch@^2.0.4, picomatch@^2.2.3, picomatch@^2.3.1:
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.3.1.tgz#3ba3833733646d9d3e4995946c1365a67fb07a42"
-  integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/picomatch/-/picomatch-2.3.2.tgz#5a942915e26b372dc0f0e6753149a16e6b1c5601"
+  integrity sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==
 
 pirates@^4.0.4:
   version "4.0.6"
