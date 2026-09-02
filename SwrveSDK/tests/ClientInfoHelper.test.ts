@@ -190,6 +190,12 @@ describe("ClientInfoHelper", () => {
     it("will exist", () => {
       expect(ClientInfoHelper.getClientInfo).toBeDefined();
     });
+
+    it("reports rich gif support", () => {
+      expect(ClientInfoHelper.getClientInfo()["swrve.support.rich_gif"]).toBe(
+        "true"
+      );
+    });
   });
 
   describe("getSDKVersion()", () => {
@@ -200,7 +206,7 @@ describe("ClientInfoHelper", () => {
     it("will return the correct SDK version", () => {
       const version = ClientInfoHelper.getSDKVersion();
       expect(version).toBeDefined();
-      expect(version).toEqual("Web 2.6.0");
+      expect(version).toEqual("Web 3.0.0");
     });
   });
 });

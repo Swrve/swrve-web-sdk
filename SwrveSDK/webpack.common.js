@@ -39,7 +39,11 @@ const swrveWorkerConfig = {
 
 const swrveSDKConfig = {
   entry: {
-    SwrveSDK: path.resolve(__dirname, "src/SwrveSDK.ts"),
+    // Build the bundle from the public entry point (index.ts) so ALL runtime
+    // exports (enums like SwrvePushInboxMessageState, ResourceManager, etc.)
+    // are included — not just the SwrveSDK class. The type declarations already
+    // point at index.ts, so this aligns the runtime bundle with the types.
+    SwrveSDK: path.resolve(__dirname, "src/index.ts"),
   },
   output: {
     library: "SwrveSDK",

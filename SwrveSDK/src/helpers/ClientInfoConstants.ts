@@ -22,6 +22,7 @@ export const SWRVE_TIMEZONE_NAME = 'swrve.timezone_name';
 export const SWRVE_USER_ID = 'swrve.user_id';
 export const SWRVE_UTC_OFFSET_SECONDS = 'swrve.utc_offset_seconds';
 export const SWRVE_DEVICE_TYPE = 'swrve.device_type';
+export const SWRVE_SUPPORT_RICH_GIF = 'swrve.support.rich_gif';
 
 /** Unique to web-sdk Device Update Properties */
 export const SWRVE_BROWSER_NAME = 'swrve.browser_name';

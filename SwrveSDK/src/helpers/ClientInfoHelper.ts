@@ -24,6 +24,7 @@ import {
   SWRVE_TIMEZONE_NAME,
   SWRVE_DEVICE_TYPE,
   SWRVE_DEVICE_NAME,
+  SWRVE_SUPPORT_RICH_GIF,
 } from "./ClientInfoConstants";
 
 abstract class ClientInfoHelper {
@@ -44,6 +45,7 @@ abstract class ClientInfoHelper {
       [SWRVE_BROWSER_NAME]: browserInfo.name,
       [SWRVE_BROWSER_VERSION]: browserInfo.version,
       [SWRVE_DEVICE_TYPE]: this.getDeviceType(),
+      [SWRVE_SUPPORT_RICH_GIF]: "true",
     };
   }
   /** OS */

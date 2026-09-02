@@ -1,5 +1,10 @@
 import { SwrveSDK } from "../src/SwrveSDK";
-import { ISwrveCampaign, ISwrveConfig, SwrveCoreSDK } from "@swrve/web-core";
+import {
+  ISwrveCampaign,
+  ISwrveConfig,
+  ISwrveEmbeddedMessage,
+  SwrveCoreSDK,
+} from "@swrve/web-core";
 import { SWRVE_DEVICE_ID } from "../src/helpers/ClientInfoConstants";
 import ClientInfoHelper from "../src/helpers/ClientInfoHelper";
 import { ISwrveSDKConfig } from "../src/interfaces/ISwrveSDKConfig";
@@ -112,7 +117,7 @@ describe("SwrveSDK", () => {
     });
 
     it("must be the correct value", () => {
-      expect(SwrveSDK.getSDKVersion()).toBe("Web 2.6.0");
+      expect(SwrveSDK.getSDKVersion()).toBe("Web 3.0.0");
     });
   });
 
@@ -345,6 +350,19 @@ describe("SwrveSDK", () => {
     });
   });
 
+  describe("refreshCampaignsAndResources", () => {
+    it("must be defined", () => {
+      expect(SwrveSDK.refreshCampaignsAndResources).toBeDefined();
+    });
+
+    it("must make the appropriate call to core", () => {
+      const coreCall = jest.fn();
+      SwrveCoreSDK.refreshCampaignsAndResources = coreCall;
+      SwrveSDK.refreshCampaignsAndResources();
+      expect(coreCall.mock.calls.length).toBe(1);
+    });
+  });
+
   // --- Embedded Campaigns ---
 
   describe("embeddedMessageWasShownToUser", () => {
@@ -356,6 +374,21 @@ describe("SwrveSDK", () => {
       const coreCall = jest.fn();
       SwrveCoreSDK.embeddedMessageWasShownToUser = coreCall;
       SwrveSDK.embeddedMessageWasShownToUser(null);
+      expect(coreCall.mock.calls.length).toBe(1);
+    });
+  });
+
+  describe("embeddedControlMessageImpressionEvent", () => {
+    it("must be defined", () => {
+      expect(SwrveSDK.embeddedControlMessageImpressionEvent).toBeDefined();
+    });
+
+    it("must make the appropriate call to core", () => {
+      const coreCall = jest.fn();
+      SwrveCoreSDK.embeddedControlMessageImpressionEvent = coreCall;
+      SwrveSDK.embeddedControlMessageImpressionEvent(
+        {} as ISwrveEmbeddedMessage
+      );
       expect(coreCall.mock.calls.length).toBe(1);
     });
   });
@@ -411,6 +444,33 @@ describe("SwrveSDK", () => {
       SwrveCoreSDK.getMessageCenterCampaigns = coreCall;
       SwrveSDK.getMessageCenterCampaigns();
       expect(coreCall.mock.calls.length).toBe(1);
+    });
+  });
+
+  describe("getInAppMessageCenterCampaigns", () => {
+    it("must be defined", () => {
+      expect(SwrveSDK.getInAppMessageCenterCampaigns).toBeDefined();
+    });
+
+    it("must make the appropriate call to core", () => {
+      const coreCall = jest.fn();
+      SwrveCoreSDK.getInAppMessageCenterCampaigns = coreCall;
+      SwrveSDK.getInAppMessageCenterCampaigns();
+      expect(coreCall.mock.calls.length).toBe(1);
+    });
+  });
+
+  describe("getMessageCenterCampaign", () => {
+    it("must be defined", () => {
+      expect(SwrveSDK.getMessageCenterCampaign).toBeDefined();
+    });
+
+    it("must make the appropriate call to core", () => {
+      const coreCall = jest.fn();
+      SwrveCoreSDK.getMessageCenterCampaign = coreCall;
+      SwrveSDK.getMessageCenterCampaign(123);
+      expect(coreCall.mock.calls.length).toBe(1);
+      expect(coreCall.mock.calls[0][0]).toBe(123);
     });
   });
 
